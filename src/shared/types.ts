@@ -192,6 +192,12 @@ export interface Settings {
   /** Accelerator that opens the popup from anywhere, or null for no shortcut. */
   globalShortcut: string | null
   layout: Layout
+  /**
+   * Whether the local MCP server for AI agents should listen. Whether it
+   * actually does is what `getMcpStatus` reports: a taken port leaves this
+   * on and the server off.
+   */
+  mcpServerEnabled: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -201,4 +207,5 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   globalShortcut: 'Control+Alt+P',
   layout: 'comfortable',
+  mcpServerEnabled: false,
 }
