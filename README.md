@@ -97,24 +97,23 @@ Click the menu-bar item, hit **Sign in with GitHub**. Pullover shows you a short
 
 </details>
 
-## 🤖 For agents
+## 🤖 Agent-friendly
 
-Pullover can serve its inbox to AI agents over the [Model Context Protocol](https://modelcontextprotocol.io). It is off by default: turn on **MCP server** in Settings, then connect your client to the URL the section shows. For Claude Code, the button next to it copies the whole command:
+Let your agents check the inbox for you:
+
+> *"Hey Claude, check Pullover to see what's on my plate right now."*
+
+They get the same classified inbox the window shows — what is waiting on you and why — with no extra GitHub token and no rules to re-implement. They can also park a pull request until tomorrow, which is the one thing your GitHub tooling cannot do.
+
+Turn on **MCP server** in Settings, then hand your client the address it shows:
 
 ```bash
 claude mcp add --transport http pullover http://127.0.0.1:7855/mcp
 ```
 
-Any client that speaks Streamable HTTP works the same way — point it at that URL, no token, no headers.
+Nothing an agent does through Pullover reaches GitHub: it reads, and a snooze is a note on this Mac. To reply or approve, it uses its own GitHub tooling at the link Pullover gives it.
 
-> [!NOTE]
-> `7855` is the released app. A build run from source listens on `7856` instead, so the two can run side by side — copy the command from Settings rather than from here.
-
-The agent gets three tools. `get_inbox` returns the sections you see, each PR with the reason it is there and since when. `snooze_pull_request` and `unsnooze_pull_request` park a PR and bring it back, exactly as the context menu does — useful for "put everything from that repo aside until tomorrow", which is tedious by hand. They reach any PR Pullover has fetched, including ones your repository filter keeps out of the window.
-
-Nothing an agent does through Pullover reaches GitHub. A snooze is a note on this Mac that only Pullover reads; to actually reply, approve or merge, an agent uses its own GitHub tooling, at the link Pullover gives it.
-
-The server listens on `127.0.0.1` only and refuses requests that did not come from this machine. The tool answers from Pullover's last fetch and refreshes first when that is more than a minute old, the same rule the window uses when you open it.
+**[Set up any client → MCP.md](MCP.md)**
 
 ## 🔐 Privacy
 
