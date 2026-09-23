@@ -11,7 +11,7 @@ function sectionsOf(
   sortOrder: 'waiting' | 'recent' = 'waiting',
 ) {
   const items = classifyAll(prs, ctx).map((item) => ({ ...item, stack: null }))
-  return buildSections(items, { grouping: 'status', sortOrder, myLogin: 'vlad' })
+  return buildSections(items, { groupBy: 'status', sortOrder, myLogin: 'vlad' })
     .filter((s) => s.items.length > 0)
     .map((s) => [s.key, s.items.map((i) => i.pr.id)])
 }

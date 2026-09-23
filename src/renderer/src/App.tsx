@@ -65,11 +65,11 @@ export default function App(): React.JSX.Element {
   // contiguous runs. Ordering happens here, once, because both the rendered
   // sections and the keyboard cursor below read from it; deriving it twice is
   // what let the cursor drift out of step with the screen.
-  const grouping = settings?.grouping ?? 'reason'
+  const groupBy = settings?.groupBy ?? 'status'
   const sortOrder = settings?.sortOrder ?? 'waiting'
   const sections = useMemo(
-    () => buildSections(snapshot.items, { grouping, sortOrder, myLogin: snapshot.myLogin }),
-    [snapshot.items, grouping, sortOrder, snapshot.myLogin],
+    () => buildSections(snapshot.items, { groupBy, sortOrder, myLogin: snapshot.myLogin }),
+    [snapshot.items, groupBy, sortOrder, snapshot.myLogin],
   )
 
   // The order the keyboard cursor travels: visual order, skipping collapsed sections.

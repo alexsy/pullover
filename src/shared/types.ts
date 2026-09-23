@@ -220,7 +220,7 @@ export interface Settings {
   /** `recent` orders each section by latest change and shows when it happened. */
   sortOrder: SortOrder
   /** `status` sections the inbox as mine, new, waiting on the author and approved. */
-  grouping: Grouping
+  groupBy: Grouping
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -233,5 +233,5 @@ export const DEFAULT_SETTINGS: Settings = {
   mcpServerEnabled: false,
   teams: [],
   sortOrder: 'waiting',
-  grouping: 'reason',
+  groupBy: 'status',
 }

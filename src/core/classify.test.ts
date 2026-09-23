@@ -215,6 +215,15 @@ describe('classify — reviewer branch', () => {
     expect(result.category).toBe('waiting')
     expect(result.reason).toBe('Waiting on author')
   })
+
+  it('says so when my review was an approval', () => {
+    const pr = makePullRequest({
+      buckets: ['involves'],
+      reviews: [{ authorLogin: ME, state: 'APPROVED', submittedAt: '2026-08-05T10:00:00Z' }],
+      lastCommitPushedAt: '2026-08-01T10:00:00Z',
+    })
+    expect(classify(pr, ctx()).reason).toBe('You approved')
+  })
 })
 
 describe('classify — author branch', () => {

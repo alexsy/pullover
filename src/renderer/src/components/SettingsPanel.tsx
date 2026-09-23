@@ -142,9 +142,9 @@ export default function SettingsPanel({
 
               <SettingRow label="Group by">
                 <SegmentedPicker
-                  value={settings.grouping}
+                  value={settings.groupBy}
                   options={GROUPING_OPTIONS}
-                  onChange={(value) => void window.api.setSettings({ grouping: value as Grouping })}
+                  onChange={(value) => void window.api.setSettings({ groupBy: value as Grouping })}
                 />
               </SettingRow>
 

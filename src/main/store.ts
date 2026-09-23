@@ -43,7 +43,7 @@ export class AppStore {
       SHORTCUT_OPTIONS.some((option) => option.value === settings.globalShortcut)
 
     const layoutKnown = LAYOUT_OPTIONS.some((option) => option.value === settings.layout)
-    const groupingKnown = GROUPING_OPTIONS.some((option) => option.value === settings.grouping)
+    const groupingKnown = GROUPING_OPTIONS.some((option) => option.value === settings.groupBy)
     const orderKnown = SORT_ORDER_OPTIONS.some((option) => option.value === settings.sortOrder)
 
     return {
@@ -51,7 +51,7 @@ export class AppStore {
       globalShortcut: known ? settings.globalShortcut : DEFAULT_SETTINGS.globalShortcut,
       layout: layoutKnown ? settings.layout : DEFAULT_SETTINGS.layout,
       sortOrder: orderKnown ? settings.sortOrder : DEFAULT_SETTINGS.sortOrder,
-      grouping: groupingKnown ? settings.grouping : DEFAULT_SETTINGS.grouping,
+      groupBy: groupingKnown ? settings.groupBy : DEFAULT_SETTINGS.groupBy,
     }
   }
 

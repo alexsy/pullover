@@ -42,12 +42,12 @@ export function statusGroup(item: ClassifiedPullRequest, myLogin: string): Statu
 export function buildSections(
   items: ClassifiedPullRequest[],
   {
-    grouping,
+    groupBy,
     sortOrder,
     myLogin,
-  }: { grouping: Grouping; sortOrder: SortOrder; myLogin: string | null },
+  }: { groupBy: Grouping; sortOrder: SortOrder; myLogin: string | null },
 ): Section[] {
-  if (grouping === 'reason' || myLogin === null) {
+  if (groupBy === 'reason' || myLogin === null) {
     return VISIBLE_CATEGORIES.map((category) => ({
       key: category,
       title: CATEGORY_TITLES[category],

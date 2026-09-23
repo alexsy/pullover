@@ -120,7 +120,8 @@ function classifyReviewPr(pr: PullRequest, myLogin: string): Verdict {
   }
 
   if (participated) {
-    return { category: 'waiting', reason: 'Waiting on author', waitingSince: null }
+    const reason = myReview?.state === 'APPROVED' ? 'You approved' : 'Waiting on author'
+    return { category: 'waiting', reason, waitingSince: null }
   }
 
   // Watching a team means wanting all of its pull requests in view, not only

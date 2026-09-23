@@ -18,6 +18,7 @@ const STATUS_ACCENTS: Record<string, Accent> = {
   'Changes requested': 'critical',
   'Merge conflicts': 'critical',
   'Ready to merge': 'positive',
+  'You approved': 'neutral-faded',
   'Waiting on author': 'neutral-faded',
   'Waiting on reviewers': 'neutral-faded',
   Snoozed: 'neutral-faded',
