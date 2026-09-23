@@ -49,7 +49,8 @@ function documentationShot(name: string, mode: ColorMode, layout: Layout): void 
     document.documentElement.setAttribute('data-rs-color-mode', mode)
 
     const snapshot = demoSnapshot(Date.now())
-    stubApi(snapshot, layout)
+    // The sections README describes, which are the reason ones.
+    stubApi(snapshot, layout, { groupBy: 'reason' })
 
     const screen = await render(
       <Reshaped theme="slate" defaultColorMode={mode}>

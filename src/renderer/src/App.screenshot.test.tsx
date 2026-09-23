@@ -78,7 +78,8 @@ function shellCase(name: string, openWaiting: boolean): void {
       // Written onto `<html>` as well as passed to the provider, for the
       // reason spelled out in test/visual.tsx.
       document.documentElement.setAttribute('data-rs-color-mode', mode)
-      stubApi(inboxZero(Date.now()), 'comfortable')
+      // The reason sections, since the case is about the collapsed `waiting` one.
+      stubApi(inboxZero(Date.now()), 'comfortable', { groupBy: 'reason' })
 
       const screen = await render(
         <Reshaped theme="slate" defaultColorMode={mode}>
