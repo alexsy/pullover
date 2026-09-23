@@ -244,9 +244,14 @@ export default function SettingsPanel({
           >
             Vlad Shilov
           </Link>
-        </Text>
-        <Text variant="caption-1" color="neutral-faded">
-          Improved and Azure DevOps support by Oleksandr Yemtsov
+          ,{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://yemtsov.pro/')}
+          >
+            Oleksandr Yemtsov
+          </Link>
         </Text>
       </View>
     </View>
