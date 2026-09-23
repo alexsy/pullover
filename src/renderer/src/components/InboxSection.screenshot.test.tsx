@@ -51,7 +51,7 @@ const ITEMS: ClassifiedPullRequest[] = [
 function section(layout: 'comfortable' | 'compact', open = true): React.JSX.Element {
   return (
     <InboxSection
-      category="needs-review"
+      title="Needs your review"
       items={ITEMS}
       now={NOW}
       sortOrder="waiting"

@@ -193,6 +193,13 @@ export const SORT_ORDER_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: 'recent', label: 'Latest change' },
 ]
 
+export type Grouping = 'reason' | 'status'
+
+export const GROUPING_OPTIONS: { value: Grouping; label: string }[] = [
+  { value: 'reason', label: 'Reason' },
+  { value: 'status', label: 'Status' },
+]
+
 export interface Settings {
   pollIntervalMinutes: number
   repositories: string[]
@@ -212,6 +219,8 @@ export interface Settings {
   teams: string[]
   /** `recent` orders each section by latest change and shows when it happened. */
   sortOrder: SortOrder
+  /** `status` sections the inbox as mine, new, waiting on the author and approved. */
+  grouping: Grouping
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -224,4 +233,5 @@ export const DEFAULT_SETTINGS: Settings = {
   mcpServerEnabled: false,
   teams: [],
   sortOrder: 'waiting',
+  grouping: 'reason',
 }

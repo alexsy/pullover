@@ -1,5 +1,15 @@
-import type { CiStatus } from '@shared/types'
-import { Check, Clock, X } from 'lucide-react'
+import { ACTIVITY_VERBS, type ActivityKind, lastActivity } from '@core/activity'
+import { formatAge, formatChangedAt } from '@core/format'
+import type { CiStatus, PullRequest, SortOrder } from '@shared/types'
+import {
+  Check,
+  Clock,
+  Eye,
+  GitCommitHorizontal,
+  GitPullRequest,
+  MessageSquare,
+  X,
+} from 'lucide-react'
 import { Icon, Text, View } from 'reshaped/bundle'
 import { accentTint, CI_BADGES, statusAccent } from './pr-colors'
 
@@ -78,5 +88,44 @@ export function StatusText({ reason }: { reason: string }): React.JSX.Element | 
     <Text as="span" variant="caption-1" weight="semibold" color={statusAccent(reason)}>
       {reason}
     </Text>
+  )
+}
+
+const ACTIVITY_ICONS: Record<ActivityKind, typeof Check> = {
+  opened: GitPullRequest,
+  pushed: GitCommitHorizontal,
+  commented: MessageSquare,
+  reviewed: Eye,
+  approved: Check,
+  rejected: X,
+}
+
+/** What last happened and when: `commented 7h ago`, or a clock time when sorted by change. */
+export function LastActivity({
+  pr,
+  now,
+  sortOrder,
+}: {
+  pr: PullRequest
+  now: string
+  sortOrder: SortOrder
+}): React.JSX.Element {
+  const activity = lastActivity(pr)
+  const when =
+    sortOrder === 'recent' ? formatChangedAt(activity.at, now) : formatAge(activity.at, now)
+  return (
+    <View
+      as="span"
+      direction="row"
+      align="center"
+      gap={1}
+      wrap={false}
+      attributes={{ title: `${ACTIVITY_VERBS[activity.kind]} by ${activity.by}` }}
+    >
+      <Icon svg={ACTIVITY_ICONS[activity.kind]} size="11px" color="neutral-faded" />
+      <Text as="span" variant="caption-1" color="neutral-faded" numeric>
+        {ACTIVITY_VERBS[activity.kind]} {when}
+      </Text>
+    </View>
   )
 }

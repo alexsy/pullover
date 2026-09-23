@@ -1,4 +1,3 @@
-import { formatChangedAt } from '@core/format'
 import type { StackCardRow } from '@core/stack'
 import type { ClassifiedPullRequest, SortOrder } from '@shared/types'
 import { Layers } from 'lucide-react'
@@ -7,7 +6,7 @@ import { Avatar, Icon, Text, Tooltip, View } from 'reshaped/bundle'
 import { pointerAnchor, showPrMenu } from '../pr-menu'
 import Marquee from './Marquee'
 import type { PullRequestCardHandle } from './PullRequestCard'
-import { avatarHueClass, CiChip, initialsOf, StatusText } from './pr-row-parts'
+import { avatarHueClass, CiChip, initialsOf, LastActivity, StatusText } from './pr-row-parts'
 import StackConnector from './StackConnector'
 
 interface Props {
@@ -141,11 +140,7 @@ const CompactPullRequestCard = forwardRef<PullRequestCardHandle, Props>(
               </View>
             )}
 
-            {sortOrder === 'recent' && (
-              <Text as="span" variant="caption-1" color="neutral-faded" numeric>
-                {formatChangedAt(pr.updatedAt, now)}
-              </Text>
-            )}
+            {sortOrder === 'recent' && <LastActivity pr={pr} now={now} sortOrder={sortOrder} />}
             <CiChip status={pr.ciStatus} />
             <StatusText reason={item.reason} />
           </View>

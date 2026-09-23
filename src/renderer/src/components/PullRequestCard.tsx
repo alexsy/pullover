@@ -1,4 +1,4 @@
-import { formatAge, formatChangedAt, formatWaiting, repositoryName } from '@core/format'
+import { repositoryName } from '@core/format'
 import type { StackCardRow } from '@core/stack'
 import type { ClassifiedPullRequest, SortOrder } from '@shared/types'
 import { Ellipsis, Layers } from 'lucide-react'
@@ -7,7 +7,14 @@ import { Actionable, Avatar, Icon, Text, View } from 'reshaped/bundle'
 import { pointerAnchor, showPrMenu } from '../pr-menu'
 import Marquee from './Marquee'
 import { accentTint } from './pr-colors'
-import { avatarHueClass, BADGE_HEIGHT_PX, CiChip, initialsOf, StatusText } from './pr-row-parts'
+import {
+  avatarHueClass,
+  BADGE_HEIGHT_PX,
+  CiChip,
+  initialsOf,
+  LastActivity,
+  StatusText,
+} from './pr-row-parts'
 import StackConnector from './StackConnector'
 
 interface Props {
@@ -213,15 +220,7 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
               >
                 ·
               </Text>
-              {/* Also what the section is sorted by, so the top row says why
-                  it is the top row. The `waiting` section has no such time. */}
-              <Text as="span" variant="caption-1" color="neutral-faded" numeric>
-                {sortOrder === 'recent'
-                  ? formatChangedAt(pr.updatedAt, now)
-                  : item.waitingSince !== null
-                    ? formatWaiting(item.waitingSince, now)
-                    : formatAge(pr.updatedAt, now)}
-              </Text>
+              <LastActivity pr={pr} now={now} sortOrder={sortOrder} />
               {pr.additions !== null && pr.deletions !== null && (
                 <>
                   <Text

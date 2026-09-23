@@ -1,6 +1,8 @@
 import { repositorySummary } from '@core/repo-filter'
 import type { McpStatus } from '@shared/ipc'
 import {
+  GROUPING_OPTIONS,
+  type Grouping,
   LAYOUT_OPTIONS,
   type Layout,
   SHORTCUT_OPTIONS,
@@ -135,6 +137,14 @@ export default function SettingsPanel({
                   value={settings.layout}
                   options={LAYOUT_OPTIONS}
                   onChange={(value) => void window.api.setSettings({ layout: value as Layout })}
+                />
+              </SettingRow>
+
+              <SettingRow label="Group by">
+                <SegmentedPicker
+                  value={settings.grouping}
+                  options={GROUPING_OPTIONS}
+                  onChange={(value) => void window.api.setSettings({ grouping: value as Grouping })}
                 />
               </SettingRow>
 

@@ -90,6 +90,7 @@ describe('settings', () => {
       mcpServerEnabled: false,
       teams: [],
       sortOrder: 'waiting',
+      grouping: 'reason',
     })
     store = new AppStore(backend)
     expect(store.getSettings().watchAllRepositories).toBe(false)
@@ -112,6 +113,7 @@ describe('settings', () => {
       mcpServerEnabled: false,
       teams: [],
       sortOrder: 'waiting',
+      grouping: 'reason',
     })
   })
 
