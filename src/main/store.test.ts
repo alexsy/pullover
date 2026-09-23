@@ -92,6 +92,7 @@ describe('settings', () => {
       sortOrder: 'waiting',
       groupBy: 'status',
       workItemProject: null,
+      workItemType: null,
     })
     store = new AppStore(backend)
     expect(store.getSettings().watchAllRepositories).toBe(false)
@@ -116,6 +117,7 @@ describe('settings', () => {
       sortOrder: 'waiting',
       groupBy: 'status',
       workItemProject: null,
+      workItemType: null,
     })
   })
 

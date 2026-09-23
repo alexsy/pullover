@@ -248,6 +248,8 @@ export interface Settings {
   groupBy: Grouping
   /** The project the Work items tab is narrowed to, or null for every project. */
   workItemProject: string | null
+  /** The work item type the tab is narrowed to, such as User Story, or null for every type. */
+  workItemType: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -262,4 +264,5 @@ export const DEFAULT_SETTINGS: Settings = {
   sortOrder: 'waiting',
   groupBy: 'status',
   workItemProject: null,
+  workItemType: null,
 }

@@ -25,12 +25,18 @@ const ITEMS: WorkItem[] = [
 
 const noop = (): void => {}
 
-visualCase('list', <WorkItemsList items={ITEMS} project={null} onProjectChange={noop} />)
+const ALL = { workItemProject: null, workItemType: null }
 
-// Narrowed to one project, from the picker at the top.
+visualCase('list', <WorkItemsList items={ITEMS} filter={ALL} onFilterChange={noop} />)
+
+// Narrowed to one project and one type, from the pickers at the top.
 visualCase(
   'one-project',
-  <WorkItemsList items={ITEMS} project="Utvikling" onProjectChange={noop} />,
+  <WorkItemsList
+    items={ITEMS}
+    filter={{ workItemProject: 'Utvikling', workItemType: 'User Story' }}
+    onFilterChange={noop}
+  />,
 )
 
-visualCase('empty', <WorkItemsList items={[]} project={null} onProjectChange={noop} />)
+visualCase('empty', <WorkItemsList items={[]} filter={ALL} onFilterChange={noop} />)

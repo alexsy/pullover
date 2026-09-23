@@ -1,4 +1,4 @@
-import { branchName } from '@core/work-items'
+import { branchName, filterWorkItems, pickerOptions, type WorkItemFilter } from '@core/work-items'
 import type { WorkItem } from '@shared/types'
 import { Check, ChevronDown, ChevronRight, GitBranch } from 'lucide-react'
 import { useState } from 'react'
@@ -83,56 +83,88 @@ function WorkItemRow({ item }: { item: WorkItem }): React.JSX.Element {
   )
 }
 
-const ALL_PROJECTS = ''
+const ALL = ''
 
 interface Props {
   items: WorkItem[]
-  /** The project the list is narrowed to, or null for all of them. */
-  project: string | null
-  onProjectChange: (project: string | null) => void
+  filter: WorkItemFilter
+  onFilterChange: (patch: Partial<WorkItemFilter>) => void
+}
+
+function Picker({
+  name,
+  allLabel,
+  options,
+  value,
+  onChange,
+}: {
+  name: string
+  allLabel: string
+  options: string[]
+  value: string | null
+  onChange: (value: string | null) => void
+}): React.JSX.Element {
+  return (
+    <Select
+      name={name}
+      size="small"
+      value={value ?? ALL}
+      onChange={({ value: next }) => onChange(next === ALL ? null : next)}
+    >
+      <option value={ALL}>{allLabel}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </Select>
+  )
 }
 
 /** Work items assigned to the user, each with a link, its description and a branch to copy. */
-export default function WorkItemsList({
-  items,
-  project,
-  onProjectChange,
-}: Props): React.JSX.Element {
-  // The chosen project stays offered while nothing in it is assigned, or the
-  // picker would silently fall back to showing everything.
-  const projects = [
-    ...new Set([...items.map((item) => item.project), ...(project ? [project] : [])]),
-  ]
-    .filter((name) => name !== '')
-    .sort((a, b) => a.localeCompare(b))
-  const shown = project === null ? items : items.filter((item) => item.project === project)
+export default function WorkItemsList({ items, filter, onFilterChange }: Props): React.JSX.Element {
+  const projects = pickerOptions(
+    items.map((item) => item.project),
+    filter.workItemProject,
+  )
+  const types = pickerOptions(
+    items.map((item) => item.type),
+    filter.workItemType,
+  )
+  const shown = filterWorkItems(items, filter)
+  const narrowed = filter.workItemProject !== null || filter.workItemType !== null
 
   return (
     <View>
-      {projects.length > 1 || project !== null ? (
-        <View paddingInline={4} paddingTop={3} paddingBottom={1}>
-          <Select
-            name="work-item-project"
-            size="small"
-            value={project ?? ALL_PROJECTS}
-            onChange={({ value }) => onProjectChange(value === ALL_PROJECTS ? null : value)}
-          >
-            <option value={ALL_PROJECTS}>All projects</option>
-            {projects.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </Select>
+      {items.length > 0 || narrowed ? (
+        <View direction="row" gap={2} paddingInline={4} paddingTop={3} paddingBottom={1}>
+          <View.Item grow>
+            <Picker
+              name="work-item-project"
+              allLabel="All projects"
+              options={projects}
+              value={filter.workItemProject}
+              onChange={(workItemProject) => onFilterChange({ workItemProject })}
+            />
+          </View.Item>
+          <View.Item grow>
+            <Picker
+              name="work-item-type"
+              allLabel="All types"
+              options={types}
+              value={filter.workItemType}
+              onChange={(workItemType) => onFilterChange({ workItemType })}
+            />
+          </View.Item>
         </View>
       ) : null}
 
       {shown.length === 0 && (
         <View padding={6} align="center">
           <Text variant="body-2" color="neutral-faded">
-            {project === null
-              ? 'Nothing open is assigned to you.'
-              : `Nothing open in ${project} is assigned to you.`}
+            {narrowed
+              ? 'Nothing open that matches is assigned to you.'
+              : 'Nothing open is assigned to you.'}
           </Text>
         </View>
       )}

@@ -1,5 +1,6 @@
+import type { WorkItem } from '@shared/types'
 import { describe, expect, it } from 'vitest'
-import { branchName, htmlToText } from './work-items'
+import { branchName, filterWorkItems, htmlToText, pickerOptions } from './work-items'
 
 describe('branchName', () => {
   it('prefixes a bug with bug/', () => {
@@ -43,5 +44,39 @@ describe('htmlToText', () => {
 
   it('drops script and style content entirely', () => {
     expect(htmlToText('<script>alert(1)</script><style>p{}</style>hi')).toBe('hi')
+  })
+})
+
+describe('filterWorkItems', () => {
+  const item = (id: number, project: string, type: string): WorkItem => ({
+    id,
+    title: '',
+    type,
+    state: 'Active',
+    project,
+    url: '',
+    description: '',
+  })
+  const items = [
+    item(1, 'Utvikling', 'User Story'),
+    item(2, 'Utvikling', 'Bug'),
+    item(3, 'Drift', 'User Story'),
+  ]
+
+  it('narrows by project and type together', () => {
+    const ids = (filter: Parameters<typeof filterWorkItems>[1]) =>
+      filterWorkItems(items, filter).map((i) => i.id)
+    expect(ids({ workItemProject: null, workItemType: null })).toEqual([1, 2, 3])
+    expect(ids({ workItemProject: 'Utvikling', workItemType: null })).toEqual([1, 2])
+    expect(ids({ workItemProject: null, workItemType: 'User Story' })).toEqual([1, 3])
+    expect(ids({ workItemProject: 'Utvikling', workItemType: 'User Story' })).toEqual([1])
+  })
+
+  it('keeps offering a choice nothing has any more', () => {
+    expect(pickerOptions(['Bug', 'User Story', 'Bug'], 'Feature')).toEqual([
+      'Bug',
+      'Feature',
+      'User Story',
+    ])
   })
 })

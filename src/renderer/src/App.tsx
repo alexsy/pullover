@@ -1,4 +1,5 @@
 import { buildSections } from '@core/sections'
+import { filterWorkItems } from '@core/work-items'
 import type { ClassifiedPullRequest } from '@shared/types'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Divider, Loader, ScrollArea, Text, useHotkeys, View } from 'reshaped/bundle'
@@ -230,12 +231,7 @@ export default function App(): React.JSX.Element {
                 { value: 'pull-requests', label: 'Pull requests' },
                 {
                   value: 'work-items',
-                  label: `Work items ${
-                    settings.workItemProject === null
-                      ? snapshot.workItems.length
-                      : snapshot.workItems.filter((w) => w.project === settings.workItemProject)
-                          .length
-                  }`,
+                  label: `Work items ${filterWorkItems(snapshot.workItems, settings).length}`,
                 },
               ]}
               onChange={(value) => setTab(value as typeof tab)}
@@ -253,10 +249,8 @@ export default function App(): React.JSX.Element {
           {onWorkItems && (
             <WorkItemsList
               items={snapshot.workItems ?? []}
-              project={settings.workItemProject}
-              onProjectChange={(project) =>
-                void window.api.setSettings({ workItemProject: project })
-              }
+              filter={settings}
+              onFilterChange={(patch) => void window.api.setSettings(patch)}
             />
           )}
 

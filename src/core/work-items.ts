@@ -1,4 +1,4 @@
-import type { WorkItem } from '@shared/types'
+import type { Settings, WorkItem } from '@shared/types'
 
 const ENTITIES: Record<string, string> = {
   amp: '&',
@@ -53,4 +53,25 @@ export function branchName(item: Pick<WorkItem, 'id' | 'type' | 'title'>): strin
   const prefix = item.type.toLowerCase() === 'bug' ? 'bug' : 'feature'
   const name = slug(item.title)
   return name === '' ? `${prefix}/${item.id}` : `${prefix}/${item.id}_${name}`
+}
+
+export type WorkItemFilter = Pick<Settings, 'workItemProject' | 'workItemType'>
+
+export function filterWorkItems(items: WorkItem[], filter: WorkItemFilter): WorkItem[] {
+  return items.filter(
+    (item) =>
+      (filter.workItemProject === null || item.project === filter.workItemProject) &&
+      (filter.workItemType === null || item.type === filter.workItemType),
+  )
+}
+
+/**
+ * The values a picker offers for one field: everything present, plus the
+ * current choice even when nothing has it any more — otherwise the picker
+ * would show "All" while the list stayed narrowed.
+ */
+export function pickerOptions(values: string[], chosen: string | null): string[] {
+  return [...new Set([...values, ...(chosen === null ? [] : [chosen])])]
+    .filter((value) => value !== '')
+    .sort((a, b) => a.localeCompare(b))
 }
