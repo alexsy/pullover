@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/omgovich/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
+  <a href="https://youtu.be/AWT0obp8sFQ"><img src="https://img.shields.io/badge/Watch%20the%20demo-6e6e6e?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the Pullover demo on YouTube" /></a>
 </p>
 
 <p align="center">
