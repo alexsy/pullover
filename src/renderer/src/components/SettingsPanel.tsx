@@ -12,7 +12,7 @@ import {
 } from '@shared/types'
 import { User } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Avatar, Button, ScrollArea, Switch, Text, View } from 'reshaped/bundle'
+import { Avatar, Button, Link, ScrollArea, Switch, Text, View } from 'reshaped/bundle'
 import { useLaunchAtLogin } from '../useLaunchAtLogin'
 import { useSettings } from '../useSettings'
 import McpSection from './McpSection'
@@ -222,6 +222,32 @@ export default function SettingsPanel({
             </View>
           </View>
         </ScrollArea>
+      </View>
+
+      <View padding={3} borderColor="neutral-faded" borderTop backgroundColor="elevation-raised">
+        <Text variant="caption-1" color="neutral-faded">
+          Pullover {__APP_VERSION__} · MIT ·{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://github.com/omgovich/pullover')}
+          >
+            Source
+          </Link>
+        </Text>
+        <Text variant="caption-1" color="neutral-faded">
+          Built by{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://omgovich.ru/')}
+          >
+            Vlad Shilov
+          </Link>
+        </Text>
+        <Text variant="caption-1" color="neutral-faded">
+          Improved and Azure DevOps support by Oleksandr Yemtsov
+        </Text>
       </View>
     </View>
   )
