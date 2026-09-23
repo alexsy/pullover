@@ -54,6 +54,7 @@ function section(layout: 'comfortable' | 'compact', open = true): React.JSX.Elem
       category="needs-review"
       items={ITEMS}
       now={NOW}
+      sortOrder="waiting"
       layout={layout}
       open={open}
       onToggle={noop}

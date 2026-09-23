@@ -38,6 +38,7 @@ export class Inbox {
     errorMessage: null,
     myLogin: null,
     knownRepositories: [],
+    siteName: null,
   }
 
   private prs: PullRequest[] = []
@@ -102,6 +103,7 @@ export class Inbox {
         myLogin: this.myLogin,
         snoozes: this.deps.store.getSnoozes(),
         now: this.now(),
+        order: settings.sortOrder,
       }),
     )
     this.emit({
@@ -200,6 +202,7 @@ export class Inbox {
         errorMessage: null,
         myLogin: null,
         knownRepositories: [],
+        siteName: null,
       })
       return
     }
@@ -223,7 +226,7 @@ export class Inbox {
       // Always fetch unfiltered: the picker's options come from what shows
       // up in the inbox, so the search itself must never be narrowed by the
       // repository selection.
-      const { prs, restrictedOrgs } = await this.fetchPrs(client, myLogin)
+      const { prs, restrictedOrgs, warning } = await this.fetchPrs(client, myLogin)
       this.prs = prs
 
       const settings = this.deps.store.getSettings()
@@ -238,6 +241,7 @@ export class Inbox {
           myLogin: this.myLogin,
           snoozes: this.deps.store.getSnoozes(),
           now,
+          order: settings.sortOrder,
         }),
       )
 
@@ -247,9 +251,10 @@ export class Inbox {
         items,
         attentionCount: countAttention(items),
         lastUpdatedAt: now,
-        errorMessage: formatRestrictedOrgs(restrictedOrgs),
+        errorMessage: warning ?? formatRestrictedOrgs(restrictedOrgs),
         myLogin: this.myLogin,
         knownRepositories: collectRepositories(this.prs),
+        siteName: client.siteName,
       })
     } catch (error) {
       const resetAt = rateLimitResetAt(error, this.now())

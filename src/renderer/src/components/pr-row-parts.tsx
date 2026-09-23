@@ -20,6 +20,20 @@ export function initialsOf(login: string): string {
   return login.slice(0, 2).toUpperCase()
 }
 
+const AVATAR_HUES = 8
+
+/**
+ * A class tinting an initials avatar, the same one for the same person every
+ * time, so a list of teammates without photos can still be told apart.
+ */
+export function avatarHueClass(login: string): string {
+  // FNV-1a: logins sharing a domain differ only at the front, which a plain
+  // multiply-and-add hash spreads poorly across so few buckets.
+  let hash = 0x811c9dc5
+  for (const char of login) hash = Math.imul(hash ^ (char.codePointAt(0) ?? 0), 0x01000193) >>> 0
+  return `pv-avatar-initials pv-avatar-hue pv-avatar-hue-${hash % AVATAR_HUES}`
+}
+
 /**
  * The CI state as an icon alone. The chip is the only thing carrying it, so
  * the label rides along as the accessible name rather than as visible text.

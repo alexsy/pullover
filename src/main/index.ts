@@ -52,10 +52,12 @@ function applyMcpSetting(): Promise<void> {
   return store.getSettings().mcpServerEnabled ? mcp.start(MCP_PORT) : mcp.stop()
 }
 
+const watchedTeams = (): string[] => store.getSettings().teams
+
 function createSource(credentials: Credentials): PullRequestSource {
   return credentials.provider === 'github'
     ? createGitHubSource(credentials.token)
-    : createAzureDevOpsSource(credentials.organization, credentials.token)
+    : createAzureDevOpsSource(credentials.organization, credentials.token, fetch, watchedTeams)
 }
 
 function loadClientFromDisk(): void {
@@ -101,7 +103,7 @@ async function signInAzureDevOps(organizationInput: string, token: string): Prom
   const organization = parseOrganization(organizationInput)
   const trimmed = token.trim()
   if (trimmed === '') throw new Error('Paste a personal access token')
-  const source = createAzureDevOpsSource(organization, trimmed)
+  const source = createAzureDevOpsSource(organization, trimmed, fetch, watchedTeams)
   await source.fetchLogin()
   saveToken(encodeCredentials({ provider: 'azure-devops', organization, token: trimmed }))
   client = source

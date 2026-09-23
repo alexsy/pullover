@@ -100,6 +100,8 @@ export interface PullRequest {
   /** Every @-mention of the user on this PR, oldest first. */
   mentionsAt: string[]
   buckets: SearchBucket[]
+  /** Watched teams on the reviewer list; Azure DevOps only. */
+  teams: string[]
 }
 
 export type Category =
@@ -184,6 +186,13 @@ export const LAYOUT_OPTIONS: { value: Layout; label: string }[] = [
   { value: 'compact', label: 'Compact' },
 ]
 
+export type SortOrder = 'waiting' | 'recent'
+
+export const SORT_ORDER_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'waiting', label: 'Longest waiting' },
+  { value: 'recent', label: 'Latest change' },
+]
+
 export interface Settings {
   pollIntervalMinutes: number
   repositories: string[]
@@ -199,6 +208,10 @@ export interface Settings {
    * on and the server off.
    */
   mcpServerEnabled: boolean
+  /** Azure DevOps teams whose review requests count as the user's. */
+  teams: string[]
+  /** `recent` orders each section by latest change and shows when it happened. */
+  sortOrder: SortOrder
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -209,4 +222,6 @@ export const DEFAULT_SETTINGS: Settings = {
   globalShortcut: 'Control+Alt+P',
   layout: 'comfortable',
   mcpServerEnabled: false,
+  teams: [],
+  sortOrder: 'waiting',
 }

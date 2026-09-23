@@ -156,3 +156,47 @@ describe('Azure DevOps source', () => {
     expect(rateLimitResetAt(error, '2026-08-10T12:00:00.000Z')).toBe('2026-08-10T12:00:30.000Z')
   })
 })
+
+describe('Azure DevOps source with watched teams', () => {
+  const teams: Route = (url) =>
+    url.pathname === '/contoso/_apis/teams'
+      ? json({ value: [{ id: 'team-id', name: 'MinSide Dev Team', projectName: 'Web' }] })
+      : undefined
+
+  it("finds pull requests assigned to a team by the team's name", async () => {
+    const { impl, seen } = fakeFetch([
+      identity,
+      teams,
+      (url) =>
+        url.searchParams.get('searchCriteria.reviewerId') === 'team-id'
+          ? json({ value: [azurePr(5, [{ id: 'team-id', vote: 0 }])] })
+          : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl, () => ['minside dev team'])
+
+    const { prs, warning } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(prs.map((p) => [p.number, p.teams])).toEqual([[5, ['MinSide Dev Team']]])
+    expect(prs[0]?.buckets).toContain('review-requested')
+    expect(warning).toBeNull()
+    expect(seen.some((s) => s.url.pathname === '/contoso/_apis/teams')).toBe(true)
+  })
+
+  it('names a team it cannot find, and still fetches the rest', async () => {
+    const { impl } = fakeFetch([identity, teams])
+    const source = createAzureDevOpsSource('contoso', 'x', impl, () => ['Nobody'])
+
+    const { warning } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(warning).toBe('No team named "Nobody"')
+  })
+
+  it("warns rather than signing out when the token can't read teams", async () => {
+    const { impl } = fakeFetch([
+      identity,
+      (url) => (url.pathname === '/contoso/_apis/teams' ? json({}, 401) : undefined),
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl, () => ['MinSide Dev Team'])
+
+    const { warning } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(warning).toMatch(/Project and Team/)
+  })
+})

@@ -1,4 +1,4 @@
-import { formatAge, formatWait, formatWaiting, repositoryName } from '@core/format'
+import { formatAge, formatChangedAt, formatWait, formatWaiting, repositoryName } from '@core/format'
 import { describe, expect, it } from 'vitest'
 
 const NOW = '2026-08-10T12:00:00Z'
@@ -112,5 +112,26 @@ describe('repositoryName', () => {
   it('survives the degenerate shapes rather than throwing', () => {
     expect(repositoryName('')).toBe('')
     expect(repositoryName('owner/')).toBe('')
+  })
+})
+
+describe('formatChangedAt', () => {
+  const now = '2026-09-23T15:30:00Z'
+
+  it('shows only the time for today', () => {
+    expect(formatChangedAt('2026-09-23T08:05:00Z', now, 'UTC')).toBe('08:05')
+  })
+
+  it('says yesterday', () => {
+    expect(formatChangedAt('2026-09-22T23:59:00Z', now, 'UTC')).toBe('Yesterday 23:59')
+  })
+
+  it('names the day this year, and the year before it', () => {
+    expect(formatChangedAt('2026-09-01T10:00:00Z', now, 'UTC')).toBe('1 Sept 10:00')
+    expect(formatChangedAt('2025-12-31T10:00:00Z', now, 'UTC')).toBe('31 Dec 2025 10:00')
+  })
+
+  it('reads the day in the given time zone', () => {
+    expect(formatChangedAt('2026-09-22T23:30:00Z', now, 'Europe/Oslo')).toBe('01:30')
   })
 })

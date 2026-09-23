@@ -58,7 +58,7 @@ On the sign-in screen pick **Use Azure DevOps instead**, enter your organization
 Pullover finds the active pull requests you're a reviewer on or wrote, across every project in the organization. A few things work differently from GitHub:
 
 - A pull request needs your review while your vote is empty. Voting takes it off your plate; a push that resets votes puts it back.
-- Only reviews assigned to you directly count — not ones assigned to a group you're in.
+- To see the pull requests assigned to a team, add it by name under **Settings → Repositories → Teams**. Looking a team up needs the token's **Project and Team (Read)** scope as well.
 - The CI chip reflects the organization's build-validation policies.
 - There are no line counts on the cards, and avatars fall back to initials.
 

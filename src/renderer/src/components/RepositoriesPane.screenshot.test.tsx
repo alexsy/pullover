@@ -21,7 +21,12 @@ const KNOWN = [
 /** The window's real height — `CARD_HEIGHT` in src/main/window.ts. */
 const WINDOW_HEIGHT_PX = 620
 
-function pane(selected: string[], watchAll: boolean, known = KNOWN): React.JSX.Element {
+function pane(
+  selected: string[],
+  watchAll: boolean,
+  known = KNOWN,
+  teams: string[] | null = null,
+): React.JSX.Element {
   stubApi()
   return (
     <div style={{ height: WINDOW_HEIGHT_PX }}>
@@ -29,6 +34,7 @@ function pane(selected: string[], watchAll: boolean, known = KNOWN): React.JSX.E
         knownRepositories={known}
         selected={selected}
         watchAll={watchAll}
+        teams={teams}
         onBack={() => {}}
       />
     </div>
@@ -108,6 +114,7 @@ test('lets the back button be clicked through the title layer over it', async ()
           knownRepositories={KNOWN}
           selected={['acme/api']}
           watchAll={false}
+          teams={null}
           onBack={() => {
             backs += 1
           }}
@@ -119,3 +126,6 @@ test('lets the back button be clicked through the title layer over it', async ()
   await screen.getByRole('button', { name: 'Settings' }).click()
   expect(backs).toBe(1)
 })
+
+// Signed in to Azure DevOps, where teams can be watched as well.
+visualCase('teams', () => pane([], true, KNOWN, ['MinSide Dev Team', 'Platform']))

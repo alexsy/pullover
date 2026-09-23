@@ -68,6 +68,7 @@ function inboxZero(now: number): InboxSnapshot {
     errorMessage: null,
     myLogin: 'vlad',
     knownRepositories: ['acme/web'],
+    siteName: 'GitHub',
   }
 }
 

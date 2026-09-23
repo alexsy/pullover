@@ -262,5 +262,6 @@ export function mapPullRequest(
       myLogin,
     ),
     buckets,
+    teams: [],
   }
 }

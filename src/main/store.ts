@@ -5,6 +5,7 @@ import {
   SHORTCUT_OPTIONS,
   type Snooze,
   type SnoozeType,
+  SORT_ORDER_OPTIONS,
 } from '@shared/types'
 import Store from 'electron-store'
 
@@ -41,11 +42,13 @@ export class AppStore {
       SHORTCUT_OPTIONS.some((option) => option.value === settings.globalShortcut)
 
     const layoutKnown = LAYOUT_OPTIONS.some((option) => option.value === settings.layout)
+    const orderKnown = SORT_ORDER_OPTIONS.some((option) => option.value === settings.sortOrder)
 
     return {
       ...settings,
       globalShortcut: known ? settings.globalShortcut : DEFAULT_SETTINGS.globalShortcut,
       layout: layoutKnown ? settings.layout : DEFAULT_SETTINGS.layout,
+      sortOrder: orderKnown ? settings.sortOrder : DEFAULT_SETTINGS.sortOrder,
     }
   }
 

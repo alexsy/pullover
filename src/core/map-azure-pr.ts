@@ -82,9 +82,16 @@ export interface AzurePullRequestDetails {
   policyEvaluations: AzurePolicyEvaluation[] | null
 }
 
+export interface AzureTeam {
+  id: string
+  name: string
+}
+
 export interface AzureMe {
   id: string
   login: string
+  /** Teams the user watches, whose review requests count as theirs. */
+  teams?: AzureTeam[]
 }
 
 /** Azure DevOps' built-in "Build" policy type, the one build validation runs under. */
@@ -171,18 +178,19 @@ function votesFrom(threads: AzureThread[]): Review[] {
 }
 
 /**
- * When the user was last added as a reviewer. Reviewers named when the pull
- * request is opened leave no event behind, so a user who is a reviewer with
- * no event naming them was asked at creation.
+ * When the user, or a team they watch, was last added as a reviewer.
+ * Reviewers named when the pull request is opened leave no event behind, so a
+ * reviewer with no event naming them was asked at creation.
  */
 function computeReviewRequestedAt(pr: AzurePullRequest, threads: AzureThread[], me: AzureMe) {
-  const isReviewer = (pr.reviewers ?? []).some((r) => r.id === me.id)
+  const ids = new Set([me.id, ...(me.teams ?? []).map((team) => team.id)])
+  const isReviewer = (pr.reviewers ?? []).some((r) => ids.has(r.id))
   const added = threads.flatMap((thread) => {
     if (threadType(thread) !== 'ReviewersUpdate') return []
     const keys = property(thread, 'CodeReviewReviewersUpdatedAddedIdentity')
     if (keys === null) return []
     const identities = thread.identities ?? {}
-    const named = keys.split(',').some((key) => identities[key.trim()]?.id === me.id)
+    const named = keys.split(',').some((key) => ids.has(identities[key.trim()]?.id ?? ''))
     return named ? [thread.publishedDate] : []
   })
   const latest = added.sort(compareIso).at(-1)
@@ -220,7 +228,8 @@ export function mapBuildStatus(evaluations: AzurePolicyEvaluation[] | null): CiS
  * On Azure DevOps a reviewer stays on the list after voting, unlike GitHub,
  * which clears them. So only a reviewer who hasn't voted yet — or whose vote
  * a push reset — is being asked for a review; one who has voted is merely
- * involved.
+ * involved. A watched team's request counts only while the user isn't a
+ * reviewer in their own right, whose vote then speaks for them.
  */
 function computeBuckets(
   pr: AzurePullRequest,
@@ -229,9 +238,14 @@ function computeBuckets(
   mentioned: boolean,
 ): SearchBucket[] {
   const buckets = new Set<SearchBucket>(found.filter((b) => b !== 'review-requested'))
+  const pending = (r: AzureReviewer): boolean => r.vote === 0 && !r.hasDeclined
   const mine = (pr.reviewers ?? []).find((r) => r.id === me.id)
+  const teamIds = new Set((me.teams ?? []).map((team) => team.id))
+  const teams = (pr.reviewers ?? []).filter((r) => teamIds.has(r.id))
   if (mine !== undefined) {
-    buckets.add(mine.vote === 0 && !mine.hasDeclined ? 'review-requested' : 'involves')
+    buckets.add(pending(mine) ? 'review-requested' : 'involves')
+  } else if (teams.length > 0) {
+    buckets.add(teams.some(pending) ? 'review-requested' : 'involves')
   }
   if (mentioned) buckets.add('mentions')
   return [...buckets]
@@ -312,5 +326,8 @@ export function mapAzurePullRequest(
     readyForReviewAt: null,
     mentionsAt,
     buckets: computeBuckets(pr, found, me, mentionsAt.length > 0),
+    teams: (me.teams ?? [])
+      .filter((team) => (pr.reviewers ?? []).some((r) => r.id === team.id))
+      .map((team) => team.name),
   }
 }

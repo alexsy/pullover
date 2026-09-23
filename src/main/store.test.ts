@@ -88,6 +88,8 @@ describe('settings', () => {
       globalShortcut: 'Control+Alt+P',
       layout: 'comfortable',
       mcpServerEnabled: false,
+      teams: [],
+      sortOrder: 'waiting',
     })
     store = new AppStore(backend)
     expect(store.getSettings().watchAllRepositories).toBe(false)
@@ -108,6 +110,8 @@ describe('settings', () => {
       globalShortcut: 'Control+Alt+P',
       layout: 'comfortable',
       mcpServerEnabled: false,
+      teams: [],
+      sortOrder: 'waiting',
     })
   })
 

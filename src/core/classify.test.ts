@@ -802,3 +802,37 @@ describe('countAttention', () => {
     expect(countAttention(items)).toBe(1)
   })
 })
+
+describe('classify — watched teams', () => {
+  const ctx: ClassifyContext = { myLogin: 'vlad', snoozes: {}, now: '2026-08-10T12:00:00Z' }
+
+  it("keeps a team's pull request in view once nothing is waiting on me", () => {
+    const item = classify(
+      makePullRequest({ teams: ['MinSide Dev Team'], buckets: ['involves'] }),
+      ctx,
+    )
+    expect(item.category).toBe('waiting')
+    expect(item.reason).toBe('MinSide Dev Team')
+  })
+})
+
+describe('classifyAll — latest change first', () => {
+  it('orders each section by the latest change', () => {
+    const older = makePullRequest({
+      id: 'old',
+      buckets: ['review-requested'],
+      updatedAt: '2026-08-02T10:00:00Z',
+    })
+    const newer = makePullRequest({
+      id: 'new',
+      buckets: ['review-requested'],
+      updatedAt: '2026-08-05T10:00:00Z',
+    })
+    const ctx: ClassifyContext = { myLogin: 'vlad', snoozes: {}, now: '2026-08-10T12:00:00Z' }
+    expect(classifyAll([older, newer], ctx).map((i) => i.pr.id)).toEqual(['old', 'new'])
+    expect(classifyAll([older, newer], { ...ctx, order: 'recent' }).map((i) => i.pr.id)).toEqual([
+      'new',
+      'old',
+    ])
+  })
+})

@@ -14,6 +14,7 @@ function card(row: ReturnType<typeof makeRow>, isActive = false): React.JSX.Elem
     <PullRequestCard
       row={row}
       now={NOW}
+      sortOrder="waiting"
       isActive={isActive}
       onHover={noop}
       onSelect={noop}
@@ -111,6 +112,7 @@ function stack(rows: ReturnType<typeof makeStackRows>): React.JSX.Element {
           key={row.item.pr.id}
           row={row}
           now={NOW}
+          sortOrder="waiting"
           isActive={false}
           onHover={noop}
           onSelect={noop}

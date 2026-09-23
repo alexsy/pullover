@@ -231,3 +231,30 @@ describe('mapBuildStatus', () => {
     expect(mapBuildStatus(null)).toBe('none')
   })
 })
+
+describe('mapAzurePullRequest with watched teams', () => {
+  const TEAM = { id: 'team-id', displayName: 'MinSide Dev Team', isContainer: true }
+  const watching = { ...ME, teams: [{ id: 'team-id', name: 'MinSide Dev Team' }] }
+
+  function mapFor(p: AzurePullRequest) {
+    return mapAzurePullRequest('contoso', p, details(), ['review-requested'], watching)
+  }
+
+  it("counts a team's pending request as mine", () => {
+    const mapped = mapFor(pr({ reviewers: [{ ...TEAM, vote: 0 }] }))
+    expect(mapped.buckets).toContain('review-requested')
+    expect(mapped.teams).toEqual(['MinSide Dev Team'])
+    expect(mapped.reviewRequestedAt).toBe('2026-08-01T10:00:00Z')
+  })
+
+  it('stops once the team has voted', () => {
+    expect(mapFor(pr({ reviewers: [{ ...TEAM, vote: 10 }] })).buckets).not.toContain(
+      'review-requested',
+    )
+  })
+
+  it('lets my own vote speak over the team', () => {
+    const mapped = mapFor(pr({ reviewers: [{ ...TEAM, vote: 0 }, reviewer(VLAD, 10)] }))
+    expect(mapped.buckets).not.toContain('review-requested')
+  })
+})

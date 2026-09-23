@@ -25,6 +25,7 @@ export function createAzureDevOpsSource(
   organization: string,
   token: string,
   fetchImpl: typeof fetch = fetch,
+  getTeams: () => string[] = () => [],
 ): PullRequestSource {
   const client = createAzureDevOpsClient(organization, token, fetchImpl)
   let me: AzureMe | null = null
@@ -35,6 +36,7 @@ export function createAzureDevOpsSource(
   return {
     siteName: 'Azure DevOps',
     fetchLogin: async () => (await identity()).login,
-    fetchPullRequests: async () => fetchAzurePullRequests(client, organization, await identity()),
+    fetchPullRequests: async () =>
+      fetchAzurePullRequests(client, organization, await identity(), getTeams()),
   }
 }

@@ -4,6 +4,7 @@ import {
   type Category,
   type ClassifiedPullRequest,
   type Layout,
+  type SortOrder,
 } from '@shared/types'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { forwardRef, useEffect, useRef } from 'react'
@@ -41,6 +42,7 @@ interface Props {
   items: ClassifiedPullRequest[]
   now: string
   layout: Layout
+  sortOrder: SortOrder
   open: boolean
   onToggle: () => void
   activePrId: string | null
@@ -56,6 +58,7 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
     items,
     now,
     layout,
+    sortOrder,
     open,
     onToggle,
     activePrId,
@@ -152,6 +155,8 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
                   key={row.item.pr.id}
                   ref={getCardRefCallback(row.item.pr.id)}
                   row={row}
+                  now={now}
+                  sortOrder={sortOrder}
                   isActive={row.item.pr.id === activePrId}
                   onHover={onHoverCard}
                   onSelect={onSelectCard}
@@ -163,6 +168,7 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
                   ref={getCardRefCallback(row.item.pr.id)}
                   row={row}
                   now={now}
+                  sortOrder={sortOrder}
                   isActive={row.item.pr.id === activePrId}
                   onHover={onHoverCard}
                   onSelect={onSelectCard}

@@ -3,6 +3,7 @@ import {
   type AzureMe,
   type AzurePolicyEvaluation,
   type AzurePullRequest,
+  type AzureTeam,
   type AzureThread,
   azureLogin,
   mapAzurePullRequest,
@@ -72,6 +73,54 @@ async function searchPullRequests(
   return perProject.flat()
 }
 
+interface TeamListing {
+  id: string
+  name: string
+  projectName?: string
+}
+
+/**
+ * The watched team names as identities. A team is written as its name, or as
+ * `Project\Team` where two projects have a team by the same name.
+ */
+async function resolveTeams(
+  client: AzureDevOpsClient,
+  names: string[],
+): Promise<{ teams: AzureTeam[]; warning: string | null }> {
+  if (names.length === 0) return { teams: [], warning: null }
+  let listing: TeamListing[]
+  try {
+    const data = (await client(
+      '_apis/teams',
+      { $top: '1000' },
+      '7.1-preview.3',
+    )) as ListResponse<TeamListing>
+    listing = data.value
+  } catch {
+    // Not rethrown even as a 401: that is also how a token lacking the
+    // Project and Team scope is refused, and it mustn't sign the user out.
+    return {
+      teams: [],
+      warning: "Couldn't look up teams — the token needs the Project and Team (Read) scope",
+    }
+  }
+
+  const teams: AzureTeam[] = []
+  const missing: string[] = []
+  for (const name of names) {
+    const wanted = name.toLowerCase()
+    const matches = listing.filter(
+      (t) =>
+        t.name.toLowerCase() === wanted || `${t.projectName}\\${t.name}`.toLowerCase() === wanted,
+    )
+    if (matches.length === 0) missing.push(name)
+    teams.push(...matches.map((t) => ({ id: t.id, name: t.name })))
+  }
+  const warning =
+    missing.length === 0 ? null : `No team named ${missing.map((n) => `"${n}"`).join(', ')}`
+  return { teams, warning }
+}
+
 async function mapLimited<T, R>(items: T[], limit: number, map: (item: T) => Promise<R>) {
   const results: R[] = new Array(items.length)
   let next = 0
@@ -113,10 +162,16 @@ async function fetchDetails(client: AzureDevOpsClient, pr: AzurePullRequest) {
 export async function fetchAzurePullRequests(
   client: AzureDevOpsClient,
   organization: string,
-  me: AzureMe,
+  identity: AzureMe,
+  teamNames: string[] = [],
 ): Promise<FetchedPullRequests> {
+  const { teams, warning } = await resolveTeams(client, teamNames)
+  const me: AzureMe = { ...identity, teams }
+  const reviewerIds = [me.id, ...teams.map((team) => team.id)]
   const [reviewing, authored] = await Promise.all([
-    searchPullRequests(client, { 'searchCriteria.reviewerId': me.id }),
+    Promise.all(
+      reviewerIds.map((id) => searchPullRequests(client, { 'searchCriteria.reviewerId': id })),
+    ).then((lists) => lists.flat()),
     searchPullRequests(client, { 'searchCriteria.creatorId': me.id }),
   ])
 
@@ -135,5 +190,5 @@ export async function fetchAzurePullRequests(
   const prs: PullRequest[] = await mapLimited([...found.values()], DETAIL_CONCURRENCY, async (e) =>
     mapAzurePullRequest(organization, e.pr, await fetchDetails(client, e.pr), [...e.buckets], me),
   )
-  return { prs, restrictedOrgs: [] }
+  return { prs, restrictedOrgs: [], warning }
 }

@@ -9,6 +9,8 @@ export interface InboxSnapshot {
   myLogin: string | null
   /** Repositories seen in the fetched pull requests, for the settings picker. */
   knownRepositories: string[]
+  /** "GitHub" or "Azure DevOps" while signed in, null while signed out. */
+  siteName: string | null
 }
 
 /**

@@ -193,6 +193,7 @@ export default function App(): React.JSX.Element {
         <SettingsPanel
           knownRepositories={snapshot.knownRepositories}
           myLogin={snapshot.myLogin}
+          siteName={snapshot.siteName}
           onClose={() => setShowSettings(false)}
         />
       </View>
@@ -242,6 +243,7 @@ export default function App(): React.JSX.Element {
                 items={orderedByCategory.get(category) ?? []}
                 now={now}
                 layout={settings.layout}
+                sortOrder={settings.sortOrder}
                 open={!collapsed.has(category)}
                 onToggle={() => toggleCategory(category)}
                 activePrId={selectedId}

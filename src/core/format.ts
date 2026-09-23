@@ -52,6 +52,29 @@ export function formatWait(iso: string, now: string): string {
 }
 
 /**
+ * When something last changed, as a clock time: `14:05` today,
+ * `Yesterday 14:05`, `21 Sep 14:05` this year and `21 Sep 2025 14:05` before.
+ */
+export function formatChangedAt(iso: string, now: string, timeZone?: string): string {
+  const parts = (at: string, options: Intl.DateTimeFormatOptions): string =>
+    new Intl.DateTimeFormat('en-GB', { timeZone, ...options }).format(new Date(at))
+  const time = parts(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+  const day = (at: string): string =>
+    parts(at, { year: 'numeric', month: '2-digit', day: '2-digit' })
+  const yesterday = new Date(Date.parse(now) - DAY).toISOString()
+
+  if (day(iso) === day(now)) return time
+  if (day(iso) === day(yesterday)) return `Yesterday ${time}`
+  const sameYear = parts(iso, { year: 'numeric' }) === parts(now, { year: 'numeric' })
+  const date = parts(iso, {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+  return `${date} ${time}`
+}
+
+/**
  * Just the repository, dropping the owner `nameWithOwner` carries.
  *
  * Only for display: `pr.repository` stays the full name everywhere else,
