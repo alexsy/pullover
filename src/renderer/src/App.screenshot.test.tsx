@@ -59,6 +59,8 @@ function inboxZero(now: number): InboxSnapshot {
           number: 3512 - index,
           title,
           authorAvatarUrl: AVATAR_SRC,
+          createdAt: new Date(now - 72 * HOUR_MS).toISOString(),
+          lastCommitPushedAt: new Date(now - (index + 1) * HOUR_MS).toISOString(),
           updatedAt: new Date(now - (index + 1) * HOUR_MS).toISOString(),
         }),
       }),

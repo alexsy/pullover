@@ -253,6 +253,10 @@ function classified(row: DemoRow, now: number): ClassifiedPullRequest {
       additions: row.additions,
       deletions: row.deletions,
       ciStatus: row.ci,
+      // Every date an offset from `now`, since the card names the last event
+      // and its age: a fixed date would age a day with every day the suite runs.
+      createdAt: iso(3 * 24 * 60 * MINUTE_MS),
+      lastCommitPushedAt: iso((row.updatedMinutes ?? row.waitingMinutes ?? 120) * MINUTE_MS),
       updatedAt: iso((row.updatedMinutes ?? row.waitingMinutes ?? 120) * MINUTE_MS),
     }),
     category: row.category,
