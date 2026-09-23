@@ -36,10 +36,11 @@ function azurePr(id: number, reviewers: Array<{ id: string; vote: number }> = []
 }
 
 function fakeFetch(routes: Route[]) {
-  const seen: Array<{ url: URL; headers: Record<string, string> }> = []
+  const seen: Array<{ url: URL; headers: Record<string, string>; body: unknown }> = []
   const impl = (async (input: URL, init?: RequestInit) => {
     const url = new URL(input)
-    seen.push({ url, headers: init?.headers as Record<string, string> })
+    const body = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined
+    seen.push({ url, headers: init?.headers as Record<string, string>, body })
     for (const route of routes) {
       const response = route(url)
       if (response !== undefined) return response
@@ -198,5 +199,111 @@ describe('Azure DevOps source with watched teams', () => {
 
     const { warning } = await source.fetchPullRequests('vlad@contoso.com')
     expect(warning).toMatch(/Project and Team/)
+  })
+})
+
+describe('Azure DevOps work items', () => {
+  it('links the work items of a pull request, with their titles', async () => {
+    const { impl } = fakeFetch([
+      identity,
+      (url) =>
+        url.pathname.endsWith('/_apis/git/pullrequests')
+          ? json({ value: [azurePr(1, [{ id: 'me-id', vote: 0 }])] })
+          : undefined,
+      (url) =>
+        url.pathname.endsWith('/pullRequests/1/workitems')
+          ? json({ value: [{ id: '151699', url: 'api' }] })
+          : undefined,
+      (url) =>
+        url.pathname.endsWith('/_apis/wit/workitemsbatch')
+          ? json({ value: [{ id: 151699, fields: { 'System.Title': 'Bump to net10' } }] })
+          : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+
+    const { prs } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(prs[0]?.workItems).toEqual([
+      {
+        id: 151699,
+        title: 'Bump to net10',
+        url: 'https://dev.azure.com/contoso/_workitems/edit/151699',
+      },
+    ])
+  })
+
+  it('still links them when the token cannot read work items', async () => {
+    const { impl } = fakeFetch([
+      identity,
+      (url) =>
+        url.pathname.endsWith('/_apis/git/pullrequests')
+          ? json({ value: [azurePr(1, [{ id: 'me-id', vote: 0 }])] })
+          : undefined,
+      (url) =>
+        url.pathname.endsWith('/pullRequests/1/workitems')
+          ? json({ value: [{ id: '7' }] })
+          : undefined,
+      (url) => (url.pathname.endsWith('/_apis/wit/workitemsbatch') ? json({}, 401) : undefined),
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+
+    const { prs } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(prs[0]?.workItems.map((w) => [w.id, w.title])).toEqual([[7, null]])
+  })
+
+  it('lists the open work items assigned to me, in the order the query gives', async () => {
+    const { impl, seen } = fakeFetch([
+      (url) =>
+        url.pathname.endsWith('/_apis/wit/wiql')
+          ? json({ workItems: [{ id: 2 }, { id: 1 }] })
+          : undefined,
+      (url) =>
+        url.pathname.endsWith('/_apis/wit/workitemsbatch')
+          ? json({
+              value: [
+                {
+                  id: 1,
+                  fields: {
+                    'System.Title': 'Footer fix',
+                    'System.WorkItemType': 'Bug',
+                    'System.State': 'Active',
+                    'Microsoft.VSTS.TCM.ReproSteps': '<div>Open <b>Min side</b></div>',
+                  },
+                },
+                {
+                  id: 2,
+                  fields: {
+                    'System.Title': 'Net10 upgrade',
+                    'System.WorkItemType': 'User Story',
+                    'System.State': 'New',
+                    'System.Description': '<p>Upgrade</p>',
+                  },
+                },
+              ],
+            })
+          : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+
+    const items = await source.fetchWorkItems?.()
+    expect(items).toEqual([
+      {
+        id: 2,
+        title: 'Net10 upgrade',
+        type: 'User Story',
+        state: 'New',
+        url: 'https://dev.azure.com/contoso/_workitems/edit/2',
+        description: 'Upgrade',
+      },
+      {
+        id: 1,
+        title: 'Footer fix',
+        type: 'Bug',
+        state: 'Active',
+        url: 'https://dev.azure.com/contoso/_workitems/edit/1',
+        description: 'Open Min side',
+      },
+    ])
+    const query = seen.find((s) => s.url.pathname.endsWith('/wiql'))?.body as { query: string }
+    expect(query.query).toMatch(/\[System.AssignedTo\] = @Me/)
   })
 })

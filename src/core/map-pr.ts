@@ -190,6 +190,17 @@ export function mapCiStatus(state: string | null | undefined): CiStatus {
   }
 }
 
+/** Authors whose latest review is an approval, in the order they approved. */
+export function approvers(reviews: Review[]): string[] {
+  const latest = new Map<string, Review>()
+  for (const review of [...reviews].sort((a, b) => compareIso(a.submittedAt, b.submittedAt))) {
+    if (review.state !== 'COMMENTED' && review.state !== 'PENDING') {
+      latest.set(review.authorLogin, review)
+    }
+  }
+  return [...latest.values()].filter((r) => r.state === 'APPROVED').map((r) => r.authorLogin)
+}
+
 export function mapPullRequest(
   node: PullRequestNode,
   buckets: SearchBucket[],
@@ -263,5 +274,7 @@ export function mapPullRequest(
     ),
     buckets,
     teams: [],
+    approvedBy: approvers(reviews),
+    workItems: [],
   }
 }

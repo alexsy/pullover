@@ -39,6 +39,7 @@ export class Inbox {
     myLogin: null,
     knownRepositories: [],
     siteName: null,
+    workItems: null,
   }
 
   private prs: PullRequest[] = []
@@ -203,6 +204,7 @@ export class Inbox {
         myLogin: null,
         knownRepositories: [],
         siteName: null,
+        workItems: null,
       })
       return
     }
@@ -226,7 +228,17 @@ export class Inbox {
       // Always fetch unfiltered: the picker's options come from what shows
       // up in the inbox, so the search itself must never be narrowed by the
       // repository selection.
+      // Alongside the pull requests, and never able to fail them: a token
+      // without the Work Items scope still gets its inbox.
+      const workItemsPass = client.fetchWorkItems?.().then(
+        (items) => ({ items, warning: null }),
+        () => ({
+          items: [],
+          warning: "Couldn't read work items — the token needs the Work Items (Read) scope",
+        }),
+      )
       const { prs, restrictedOrgs, warning } = await this.fetchPrs(client, myLogin)
+      const workItems = workItemsPass === undefined ? null : await workItemsPass
       this.prs = prs
 
       const settings = this.deps.store.getSettings()
@@ -251,10 +263,14 @@ export class Inbox {
         items,
         attentionCount: countAttention(items),
         lastUpdatedAt: now,
-        errorMessage: warning ?? formatRestrictedOrgs(restrictedOrgs),
+        errorMessage:
+          [warning ?? formatRestrictedOrgs(restrictedOrgs), workItems?.warning]
+            .filter((notice) => notice != null)
+            .join(' · ') || null,
         myLogin: this.myLogin,
         knownRepositories: collectRepositories(this.prs),
         siteName: client.siteName,
+        workItems: workItems?.items ?? null,
       })
     } catch (error) {
       const resetAt = rateLimitResetAt(error, this.now())

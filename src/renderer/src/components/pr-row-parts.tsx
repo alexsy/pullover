@@ -7,10 +7,11 @@ import {
   Eye,
   GitCommitHorizontal,
   GitPullRequest,
+  Link2,
   MessageSquare,
   X,
 } from 'lucide-react'
-import { Icon, Text, View } from 'reshaped/bundle'
+import { Actionable, Icon, Text, View } from 'reshaped/bundle'
 import { accentTint, CI_BADGES, statusAccent } from './pr-colors'
 
 /**
@@ -126,6 +127,42 @@ export function LastActivity({
       <Text as="span" variant="caption-1" color="neutral-faded" numeric>
         {ACTIVITY_VERBS[activity.kind]} {when}
       </Text>
+    </View>
+  )
+}
+
+/**
+ * The linked work items and who approved, under the title. Each work item
+ * opens itself; the click stops there rather than also opening the card.
+ */
+export function PrLinks({ pr }: { pr: PullRequest }): React.JSX.Element | null {
+  if (pr.workItems.length === 0 && pr.approvedBy.length === 0) return null
+  return (
+    <View direction="row" align="center" gap={2} wrap={false} minWidth={0}>
+      {pr.workItems.map((workItem) => (
+        <Actionable
+          key={workItem.id}
+          stopPropagation
+          onClick={() => void window.api.openPr(workItem.url)}
+          attributes={{ title: workItem.title ?? `Work item ${workItem.id}` }}
+        >
+          <View direction="row" align="center" gap={1} wrap={false} minWidth={0}>
+            <Icon svg={Link2} size="11px" color="primary" />
+            <Text as="span" variant="caption-1" color="primary" maxLines={1}>
+              #{workItem.id}
+              {workItem.title !== null && workItem.title !== '' ? ` ${workItem.title}` : ''}
+            </Text>
+          </View>
+        </Actionable>
+      ))}
+      {pr.approvedBy.length > 0 && (
+        <View direction="row" align="center" gap={1} wrap={false} minWidth={0}>
+          <Icon svg={Check} size="11px" color="positive" />
+          <Text as="span" variant="caption-1" color="neutral-faded" maxLines={1}>
+            {pr.approvedBy.join(', ')}
+          </Text>
+        </View>
+      )}
     </View>
   )
 }

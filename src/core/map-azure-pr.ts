@@ -9,6 +9,7 @@ import type {
   ReviewThread,
   SearchBucket,
   ThreadComment,
+  WorkItemRef,
 } from '@shared/types'
 
 /** The shapes below are the parts of Azure DevOps' REST responses (api-version 7.1) this app reads. */
@@ -80,6 +81,8 @@ export interface AzurePullRequestDetails {
   iterations: AzureIteration[]
   /** Null when the evaluations couldn't be read; the pull request then shows no CI. */
   policyEvaluations: AzurePolicyEvaluation[] | null
+  /** Linked work items, titled where the token could read them. */
+  workItems?: WorkItemRef[]
 }
 
 export interface AzureTeam {
@@ -326,6 +329,10 @@ export function mapAzurePullRequest(
     readyForReviewAt: null,
     mentionsAt,
     buckets: computeBuckets(pr, found, me, mentionsAt.length > 0),
+    approvedBy: (pr.reviewers ?? [])
+      .filter((r) => !r.isContainer && r.vote >= 5)
+      .map((r) => r.displayName),
+    workItems: details.workItems ?? [],
     teams: (me.teams ?? [])
       .filter((team) => (pr.reviewers ?? []).some((r) => r.id === team.id))
       .map((team) => team.name),

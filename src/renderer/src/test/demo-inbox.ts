@@ -294,5 +294,6 @@ export function demoSnapshot(now: number): InboxSnapshot {
     // offer repositories no row in the demo belongs to.
     knownRepositories: [...new Set(ROWS.map((row) => row.repository))],
     siteName: 'GitHub',
+    workItems: null,
   }
 }

@@ -50,6 +50,8 @@ export function makePullRequest(overrides: Partial<PullRequest> = {}): PullReque
     mentionsAt: [],
     buckets: [],
     teams: [],
+    approvedBy: [],
+    workItems: [],
     ...overrides,
   }
 }

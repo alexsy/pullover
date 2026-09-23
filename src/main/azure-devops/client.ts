@@ -16,11 +16,16 @@ export class AzureDevOpsError extends Error {
   }
 }
 
-/** A GET against `https://dev.azure.com/{organization}/{path}`, answering the parsed JSON. */
+/**
+ * A request to `https://dev.azure.com/{organization}/{path}`, answering the
+ * parsed JSON: a GET, or a POST of `body` where one is given — WIQL and the
+ * work item batch are queries sent as POSTs, and read nothing.
+ */
 export type AzureDevOpsClient = (
   path: string,
   params?: Record<string, string>,
   apiVersion?: string | null,
+  body?: unknown,
 ) => Promise<unknown>
 
 export function createAzureDevOpsClient(
@@ -31,7 +36,7 @@ export function createAzureDevOpsClient(
   const base = `https://dev.azure.com/${encodeURIComponent(organization)}/`
   const authorization = `Basic ${Buffer.from(`:${token}`).toString('base64')}`
 
-  return async (path, params = {}, apiVersion = '7.1') => {
+  return async (path, params = {}, apiVersion = '7.1', body = undefined) => {
     const url = new URL(path, base)
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
     if (apiVersion !== null) url.searchParams.set('api-version', apiVersion)
@@ -39,9 +44,12 @@ export function createAzureDevOpsClient(
     let response: Response
     try {
       response = await fetchImpl(url, {
+        method: body === undefined ? 'GET' : 'POST',
+        body: body === undefined ? undefined : JSON.stringify(body),
         headers: {
           authorization,
           accept: 'application/json',
+          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
           // Without it a rejected token is answered with a redirect to the
           // sign-in page instead of a 401.
           'x-tfs-fedauthredirect': 'Suppress',

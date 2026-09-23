@@ -1,0 +1,32 @@
+name: Record screenshots
+
+# Temporary: records the macOS screenshot baselines for this branch, which a
+# Linux session cannot, and commits them back. Removed once they are in.
+on:
+  push:
+    branches: [claude/azure-devops-pr-support-oi9zq8]
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm run test:visual -- -u
+      - run: npm run docs:shots
+      - name: Commit baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A src docs
+          git diff --cached --quiet && exit 0
+          git commit -m "Record screenshot baselines on macos-15"
+          git push

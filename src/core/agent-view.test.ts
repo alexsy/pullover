@@ -33,6 +33,7 @@ function snapshot(
     myLogin: 'vlad',
     knownRepositories: ['acme/web'],
     siteName: 'GitHub',
+    workItems: null,
     ...rest,
   }
 }

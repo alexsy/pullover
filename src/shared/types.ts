@@ -102,6 +102,29 @@ export interface PullRequest {
   buckets: SearchBucket[]
   /** Watched teams on the reviewer list; Azure DevOps only. */
   teams: string[]
+  /** Display names of the reviewers whose current vote is an approval. */
+  approvedBy: string[]
+  /** Work items linked to the pull request; Azure DevOps only. */
+  workItems: WorkItemRef[]
+}
+
+export interface WorkItemRef {
+  id: number
+  /** Null when the token can't read work items, so only the link can be shown. */
+  title: string | null
+  url: string
+}
+
+/** A work item assigned to the user, for the Work items tab. */
+export interface WorkItem {
+  id: number
+  title: string
+  /** As the process names it: Bug, User Story, Product Backlog Item, Task… */
+  type: string
+  state: string
+  url: string
+  /** Plain text, converted from the HTML Azure DevOps stores. */
+  description: string
 }
 
 export type Category =

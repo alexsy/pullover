@@ -8,7 +8,8 @@ import {
   azureLogin,
   mapAzurePullRequest,
 } from '@core/map-azure-pr'
-import type { PullRequest, SearchBucket } from '@shared/types'
+import { htmlToText } from '@core/work-items'
+import type { PullRequest, SearchBucket, WorkItem, WorkItemRef } from '@shared/types'
 import { isAuthError } from '../github/auth-error'
 import type { FetchedPullRequests } from '../github/fetch-prs'
 import { type AzureDevOpsClient, AzureDevOpsError } from './client'
@@ -139,7 +140,7 @@ async function fetchDetails(client: AzureDevOpsClient, pr: AzurePullRequest) {
   const base = `${project}/_apis/git/repositories/${pr.repository.id}/pullRequests/${pr.pullRequestId}`
   const artifactId = `vstfs:///CodeReview/CodeReviewId/${pr.repository.project.id}/${pr.pullRequestId}`
 
-  const [threads, iterations, policyEvaluations] = await Promise.all([
+  const [threads, iterations, policyEvaluations, workItemIds] = await Promise.all([
     client(`${base}/threads`) as Promise<ListResponse<AzureThread>>,
     client(`${base}/iterations`) as Promise<ListResponse<AzureIteration>>,
     // Build status is a nicety: a token without policy access still gets its
@@ -155,8 +156,102 @@ async function fetchDetails(client: AzureDevOpsClient, pr: AzurePullRequest) {
         return null
       },
     ),
+    (client(`${base}/workitems`) as Promise<ListResponse<{ id: string | number }>>).then(
+      (data) => data.value.map((ref) => Number(ref.id)).filter(Number.isFinite),
+      (error: unknown) => {
+        if (isAuthError(error)) throw error
+        return []
+      },
+    ),
   ])
-  return { threads: threads.value, iterations: iterations.value, policyEvaluations }
+  return { threads: threads.value, iterations: iterations.value, policyEvaluations, workItemIds }
+}
+
+interface WorkItemFields {
+  id: number
+  fields: Record<string, string | undefined>
+}
+
+/** The work item batch endpoint takes at most 200 ids a request. */
+const WORK_ITEM_BATCH = 200
+
+async function fetchWorkItemFields(
+  client: AzureDevOpsClient,
+  ids: number[],
+  fields: string[],
+): Promise<WorkItemFields[]> {
+  const batches: number[][] = []
+  for (let i = 0; i < ids.length; i += WORK_ITEM_BATCH)
+    batches.push(ids.slice(i, i + WORK_ITEM_BATCH))
+  const results = await Promise.all(
+    batches.map(
+      (batch) =>
+        client('_apis/wit/workitemsbatch', {}, '7.1', { ids: batch, fields }) as Promise<
+          ListResponse<WorkItemFields>
+        >,
+    ),
+  )
+  return results.flatMap((data) => data.value)
+}
+
+export function workItemUrl(organization: string, id: number): string {
+  return `https://dev.azure.com/${encodeURIComponent(organization)}/_workitems/edit/${id}`
+}
+
+/**
+ * Titles for the linked work items, or none at all when the token can't read
+ * work items — the links still work without them.
+ */
+async function titlesFor(client: AzureDevOpsClient, ids: number[]): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map()
+  try {
+    const items = await fetchWorkItemFields(client, ids, ['System.Title'])
+    return new Map(items.map((item) => [item.id, item.fields['System.Title'] ?? '']))
+  } catch {
+    return new Map()
+  }
+}
+
+/** Open work items assigned to the user, most recently changed first. */
+export async function fetchAssignedWorkItems(
+  client: AzureDevOpsClient,
+  organization: string,
+): Promise<WorkItem[]> {
+  const query = `SELECT [System.Id] FROM WorkItems
+    WHERE [System.AssignedTo] = @Me
+    AND [System.State] NOT IN ('Closed', 'Done', 'Removed', 'Resolved', 'Completed', 'Cut')
+    ORDER BY [System.ChangedDate] DESC`
+  const found = (await client('_apis/wit/wiql', { $top: '100' }, '7.1', { query })) as {
+    workItems: Array<{ id: number }>
+  }
+  const ids = found.workItems.map((item) => item.id)
+  if (ids.length === 0) return []
+
+  const items = await fetchWorkItemFields(client, ids, [
+    'System.Title',
+    'System.WorkItemType',
+    'System.State',
+    'System.Description',
+    'Microsoft.VSTS.TCM.ReproSteps',
+  ])
+  const byId = new Map(items.map((item) => [item.id, item.fields]))
+  return ids.flatMap((id) => {
+    const fields = byId.get(id)
+    if (fields === undefined) return []
+    return [
+      {
+        id,
+        title: fields['System.Title'] ?? '',
+        type: fields['System.WorkItemType'] ?? '',
+        state: fields['System.State'] ?? '',
+        url: workItemUrl(organization, id),
+        // A bug keeps its story in Repro Steps and often leaves Description empty.
+        description: htmlToText(
+          fields['System.Description'] || fields['Microsoft.VSTS.TCM.ReproSteps'] || '',
+        ),
+      },
+    ]
+  })
 }
 
 export async function fetchAzurePullRequests(
@@ -187,8 +282,17 @@ export async function fetchAzurePullRequests(
   collect(reviewing, 'review-requested')
   collect(authored, 'author')
 
-  const prs: PullRequest[] = await mapLimited([...found.values()], DETAIL_CONCURRENCY, async (e) =>
-    mapAzurePullRequest(organization, e.pr, await fetchDetails(client, e.pr), [...e.buckets], me),
-  )
+  const entries = [...found.values()]
+  const details = await mapLimited(entries, DETAIL_CONCURRENCY, (e) => fetchDetails(client, e.pr))
+  const titles = await titlesFor(client, [...new Set(details.flatMap((d) => d.workItemIds))])
+  const prs: PullRequest[] = entries.map((e, index) => {
+    const detail = details[index] as (typeof details)[number]
+    const workItems: WorkItemRef[] = detail.workItemIds.map((id) => ({
+      id,
+      title: titles.get(id) ?? null,
+      url: workItemUrl(organization, id),
+    }))
+    return mapAzurePullRequest(organization, e.pr, { ...detail, workItems }, [...e.buckets], me)
+  })
   return { prs, restrictedOrgs: [], warning }
 }

@@ -258,3 +258,19 @@ describe('mapAzurePullRequest with watched teams', () => {
     expect(mapped.buckets).not.toContain('review-requested')
   })
 })
+
+describe('mapAzurePullRequest approvers', () => {
+  it('names the people whose vote approves, not groups and not other votes', () => {
+    const mapped = map(
+      pr({
+        reviewers: [
+          reviewer(ALICE, 10),
+          reviewer(VLAD, 5),
+          { id: 'team', displayName: 'Team', vote: 10, isContainer: true },
+          { id: 'x', displayName: 'Rejecting', vote: -10 },
+        ],
+      }),
+    )
+    expect(mapped.approvedBy).toEqual(['Alice', 'Vlad'])
+  })
+})

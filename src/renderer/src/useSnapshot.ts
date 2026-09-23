@@ -10,6 +10,7 @@ const EMPTY: InboxSnapshot = {
   myLogin: null,
   knownRepositories: [],
   siteName: null,
+  workItems: null,
 }
 
 export function useSnapshot(): InboxSnapshot {

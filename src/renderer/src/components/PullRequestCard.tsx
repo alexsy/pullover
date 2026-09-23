@@ -13,6 +13,7 @@ import {
   CiChip,
   initialsOf,
   LastActivity,
+  PrLinks,
   StatusText,
 } from './pr-row-parts'
 import StackConnector from './StackConnector'
@@ -299,6 +300,8 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
                 <StatusText reason={item.reason} />
               </View>
             </View>
+
+            <PrLinks pr={pr} />
           </View>
         </View.Item>
       </View>

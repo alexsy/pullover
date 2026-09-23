@@ -1,4 +1,4 @@
-import type { ClassifiedPullRequest, Settings, SnoozeType, UpdateState } from './types'
+import type { ClassifiedPullRequest, Settings, SnoozeType, UpdateState, WorkItem } from './types'
 
 export interface InboxSnapshot {
   status: 'signed-out' | 'loading' | 'ready' | 'error'
@@ -11,6 +11,8 @@ export interface InboxSnapshot {
   knownRepositories: string[]
   /** "GitHub" or "Azure DevOps" while signed in, null while signed out. */
   siteName: string | null
+  /** Work items assigned to the user, or null where the site has none. */
+  workItems: WorkItem[] | null
 }
 
 /**

@@ -71,6 +71,7 @@ function inboxZero(now: number): InboxSnapshot {
     myLogin: 'vlad',
     knownRepositories: ['acme/web'],
     siteName: 'GitHub',
+    workItems: null,
   }
 }
 
