@@ -75,8 +75,9 @@ export interface PullRequest {
   createdAt: string
   updatedAt: string
   isDraft: boolean
-  additions: number
-  deletions: number
+  /** Null where the site doesn't report line counts, as Azure DevOps doesn't. */
+  additions: number | null
+  deletions: number | null
   headRefName: string
   baseRefName: string
   ciStatus: CiStatus

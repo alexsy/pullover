@@ -51,6 +51,20 @@ Drag Pullover into Applications and launch it.
 Sign in with GitHub and you're done — out of the box Pullover watches every repo you're involved in. If that's too much, narrow it down to specific repos in **Settings**.
 
 <details>
+<summary><b>Azure DevOps</b></summary>
+
+On the sign-in screen pick **Use Azure DevOps instead**, enter your organization (`contoso` or `https://dev.azure.com/contoso`) and a [personal access token](https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) with the **Code (Read)** scope. The token is encrypted with the macOS Keychain, the same way a GitHub token is.
+
+Pullover finds the active pull requests you're a reviewer on or wrote, across every project in the organization. A few things work differently from GitHub:
+
+- A pull request needs your review while your vote is empty. Voting takes it off your plate; a push that resets votes puts it back.
+- Only reviews assigned to you directly count — not ones assigned to a group you're in.
+- The CI chip reflects the organization's build-validation policies.
+- There are no line counts on the cards, and avatars fall back to initials.
+
+</details>
+
+<details>
 <summary><b>🛠️ Running from source</b></summary>
 
 ### 1. Register a GitHub OAuth App

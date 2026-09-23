@@ -28,7 +28,7 @@ function fetched(prs: PullRequest[]): FetchedPullRequests {
 }
 
 const NOW = '2026-08-10T12:00:00Z'
-const CLIENT = (async () => ({})) as never
+const CLIENT = { siteName: 'GitHub' } as never
 
 let store: AppStore
 let changes: InboxSnapshot[]

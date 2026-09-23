@@ -18,7 +18,8 @@ export interface KeyValueStore {
   set<K extends keyof PersistedState>(key: K, value: PersistedState[K]): void
 }
 
-const REPO_PATTERN = /^[\w.-]+\/[\w.-]+$/
+// Spaces are for Azure DevOps, whose project and repository names may have them.
+const REPO_PATTERN = /^[\w.-](?:[\w. -]*[\w.-])?\/[\w.-](?:[\w. -]*[\w.-])?$/
 
 export class AppStore {
   constructor(private readonly backend: KeyValueStore) {}

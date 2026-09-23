@@ -63,6 +63,7 @@ export const IPC = {
   removeRepository: 'settings:remove-repository',
   startAuth: 'auth:start',
   deviceCode: 'auth:device-code',
+  signInAzureDevOps: 'auth:sign-in-azure-devops',
   signOut: 'auth:sign-out',
   hidePopup: 'window:hide-popup',
   getUpdate: 'update:get',
@@ -90,6 +91,8 @@ export interface RendererApi {
   addRepository: (fullName: string) => Promise<void>
   removeRepository: (fullName: string) => Promise<void>
   startAuth: () => Promise<void>
+  /** Signs in to an Azure DevOps organization with a personal access token. */
+  signInAzureDevOps: (organization: string, token: string) => Promise<void>
   signOut: () => Promise<void>
   hidePopup: () => Promise<void>
   getUpdate: () => Promise<UpdateState>

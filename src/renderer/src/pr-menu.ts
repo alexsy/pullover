@@ -1,3 +1,4 @@
+import { filesUrl } from '@core/pr-links'
 import type { ClassifiedPullRequest } from '@shared/types'
 
 /** Where to pop the menu, in window coordinates. */
@@ -52,7 +53,7 @@ export async function showPrMenu(
       await window.api.openPr(pr.url)
       return
     case 'open-files':
-      await window.api.openPr(`${pr.url}/files`)
+      await window.api.openPr(filesUrl(pr.url))
       return
     case 'copy-link':
       await window.api.copyText(pr.url)

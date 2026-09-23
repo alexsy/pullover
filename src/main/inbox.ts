@@ -6,15 +6,16 @@ import type { InboxSnapshot } from '@shared/ipc'
 import type { ClassifiedPullRequest, PullRequest } from '@shared/types'
 import { isAuthError } from './github/auth-error'
 import { describeError } from './github/error-message'
-import { fetchPullRequests, fetchViewerLogin, type GraphQLClient } from './github/fetch-prs'
+import type { FetchedPullRequests } from './github/fetch-prs'
 import { formatRestrictedOrgs } from './github/org-restriction'
 import { rateLimitResetAt } from './github/rate-limit'
+import type { PullRequestSource } from './source'
 import type { AppStore } from './store'
 
 export interface InboxDeps {
   store: AppStore
   /** Returns null while the user is signed out. */
-  getClient: () => GraphQLClient | null
+  getClient: () => PullRequestSource | null
   onChange: (snapshot: InboxSnapshot) => void
   /**
    * Called from the refresh catch block when the failure looks like a dead
@@ -24,8 +25,8 @@ export interface InboxDeps {
    */
   onAuthError?: () => void
   now?: () => string
-  fetchPrs?: typeof fetchPullRequests
-  fetchLogin?: typeof fetchViewerLogin
+  fetchPrs?: (source: PullRequestSource, myLogin: string) => Promise<FetchedPullRequests>
+  fetchLogin?: (source: PullRequestSource) => Promise<string>
 }
 
 export class Inbox {
@@ -54,13 +55,13 @@ export class Inbox {
   /** When a hit rate limit lifts. Refreshes are skipped until then. */
   private rateLimitedUntil: string | null = null
   private readonly now: () => string
-  private readonly fetchPrs: typeof fetchPullRequests
-  private readonly fetchLogin: typeof fetchViewerLogin
+  private readonly fetchPrs: NonNullable<InboxDeps['fetchPrs']>
+  private readonly fetchLogin: NonNullable<InboxDeps['fetchLogin']>
 
   constructor(private readonly deps: InboxDeps) {
     this.now = deps.now ?? (() => new Date().toISOString())
-    this.fetchPrs = deps.fetchPrs ?? fetchPullRequests
-    this.fetchLogin = deps.fetchLogin ?? fetchViewerLogin
+    this.fetchPrs = deps.fetchPrs ?? ((source, myLogin) => source.fetchPullRequests(myLogin))
+    this.fetchLogin = deps.fetchLogin ?? ((source) => source.fetchLogin())
   }
 
   getSnapshot(): InboxSnapshot {
@@ -259,7 +260,7 @@ export class Inbox {
         errorMessage:
           resetAt === null
             ? describeError(error)
-            : `GitHub's rate limit is reached — try again in ${formatWait(resetAt, this.now())}`,
+            : `${client.siteName}'s rate limit is reached — try again in ${formatWait(resetAt, this.now())}`,
       })
       // A dead token fails every refresh the same way forever, so recognise
       // it specifically and hand off to whatever "sign out" means to the

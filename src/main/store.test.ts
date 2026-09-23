@@ -204,6 +204,11 @@ describe('repositories', () => {
     expect(store.getSettings().repositories).toEqual(['acme-co/my_repo.js'])
   })
 
+  it('accepts an Azure DevOps project name with spaces', () => {
+    store.addRepository('Contoso Web/api')
+    expect(store.getSettings().repositories).toContain('contoso web/api')
+  })
+
   it('removes a repository', () => {
     store.addRepository('acme/web')
     store.addRepository('acme/api')

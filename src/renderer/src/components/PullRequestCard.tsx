@@ -217,23 +217,27 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
                   ? formatWaiting(item.waitingSince, now)
                   : formatAge(pr.updatedAt, now)}
               </Text>
-              <Text
-                as="span"
-                variant="caption-1"
-                color="neutral-faded"
-                attributes={{ style: { opacity: 0.45 } }}
-              >
-                ·
-              </Text>
-              <View as="span" direction="row" gap={1}>
-                <Text as="span" variant="caption-1" weight="semibold" numeric color="positive">
-                  +{pr.additions}
-                </Text>
-                <Text as="span" variant="caption-1" weight="semibold" numeric color="critical">
-                  {'−'}
-                  {pr.deletions}
-                </Text>
-              </View>
+              {pr.additions !== null && pr.deletions !== null && (
+                <>
+                  <Text
+                    as="span"
+                    variant="caption-1"
+                    color="neutral-faded"
+                    attributes={{ style: { opacity: 0.45 } }}
+                  >
+                    ·
+                  </Text>
+                  <View as="span" direction="row" gap={1}>
+                    <Text as="span" variant="caption-1" weight="semibold" numeric color="positive">
+                      +{pr.additions}
+                    </Text>
+                    <Text as="span" variant="caption-1" weight="semibold" numeric color="critical">
+                      {'−'}
+                      {pr.deletions}
+                    </Text>
+                  </View>
+                </>
+              )}
 
               {/* The same menu the right-click and the M key open — the
                   button is only the affordance that says it is there. Stays

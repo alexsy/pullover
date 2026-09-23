@@ -1,13 +1,15 @@
 import { shouldRefreshOnOpen } from '@core/staleness'
 import { IPC } from '@shared/ipc'
 import { app, type BrowserWindow, clipboard, type Rectangle, shell, type Tray } from 'electron'
+import { type Credentials, decodeCredentials, encodeCredentials } from './auth/credentials'
 import { pollForToken, requestDeviceCode } from './auth/device-flow'
 import { clearToken, loadToken, saveToken } from './auth/token-storage'
-import { createGraphQLClient, type GraphQLClient } from './github/fetch-prs'
+import { parseOrganization } from './azure-devops/organization'
 import { Inbox } from './inbox'
 import { registerIpc } from './ipc'
 import { mcpUrl, PulloverMcpServer } from './mcp/server'
 import { Shortcut } from './shortcut'
+import { createAzureDevOpsSource, createGitHubSource, type PullRequestSource } from './source'
 import { createAppStore } from './store'
 import { createTray, setBadge } from './tray'
 import { Updater } from './updater'
@@ -23,7 +25,7 @@ const CLIENT_ID = import.meta.env.MAIN_VITE_GITHUB_CLIENT_ID as string | undefin
 
 let window: BrowserWindow | null = null
 let tray: Tray | null = null
-let client: GraphQLClient | null = null
+let client: PullRequestSource | null = null
 
 const store = createAppStore()
 
@@ -50,9 +52,16 @@ function applyMcpSetting(): Promise<void> {
   return store.getSettings().mcpServerEnabled ? mcp.start(MCP_PORT) : mcp.stop()
 }
 
+function createSource(credentials: Credentials): PullRequestSource {
+  return credentials.provider === 'github'
+    ? createGitHubSource(credentials.token)
+    : createAzureDevOpsSource(credentials.organization, credentials.token)
+}
+
 function loadClientFromDisk(): void {
-  const token = loadToken()
-  client = token === null ? null : createGraphQLClient(token)
+  const stored = loadToken()
+  const credentials = stored === null ? null : decodeCredentials(stored)
+  client = credentials === null ? null : createSource(credentials)
 }
 
 function shouldFetchOnOpen(): boolean {
@@ -79,8 +88,23 @@ async function doSignIn(
   await shell.openExternal(info.verificationUri)
 
   const token = await pollForToken(CLIENT_ID, info)
-  saveToken(token)
-  client = createGraphQLClient(token)
+  saveToken(encodeCredentials({ provider: 'github', token }))
+  client = createGitHubSource(token)
+  inbox.start()
+}
+
+/**
+ * Checks the token by asking who it belongs to before keeping it, so a typo
+ * is reported on the sign-in screen rather than as a failed refresh.
+ */
+async function signInAzureDevOps(organizationInput: string, token: string): Promise<void> {
+  const organization = parseOrganization(organizationInput)
+  const trimmed = token.trim()
+  if (trimmed === '') throw new Error('Paste a personal access token')
+  const source = createAzureDevOpsSource(organization, trimmed)
+  await source.fetchLogin()
+  saveToken(encodeCredentials({ provider: 'azure-devops', organization, token: trimmed }))
+  client = source
   inbox.start()
 }
 
@@ -168,7 +192,9 @@ void app.whenReady().then(() => {
     store,
     getWindow: () => window,
     signIn,
+    signInAzureDevOps,
     signOut,
+    getSiteName: () => client?.siteName ?? 'GitHub',
     restartPolling,
     getUpdate: () => updater.getState(),
     installUpdate: () => updater.install(),
