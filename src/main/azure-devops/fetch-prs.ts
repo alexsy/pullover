@@ -231,6 +231,7 @@ export async function fetchAssignedWorkItems(
     'System.Title',
     'System.WorkItemType',
     'System.State',
+    'System.TeamProject',
     'System.Description',
     'Microsoft.VSTS.TCM.ReproSteps',
   ])
@@ -244,6 +245,7 @@ export async function fetchAssignedWorkItems(
         title: fields['System.Title'] ?? '',
         type: fields['System.WorkItemType'] ?? '',
         state: fields['System.State'] ?? '',
+        project: fields['System.TeamProject'] ?? '',
         url: workItemUrl(organization, id),
         // A bug keeps its story in Repro Steps and often leaves Description empty.
         description: htmlToText(

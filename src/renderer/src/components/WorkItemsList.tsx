@@ -2,7 +2,7 @@ import { branchName } from '@core/work-items'
 import type { WorkItem } from '@shared/types'
 import { Check, ChevronDown, ChevronRight, GitBranch } from 'lucide-react'
 import { useState } from 'react'
-import { Actionable, Button, Divider, Icon, Link, Text, View } from 'reshaped/bundle'
+import { Actionable, Button, Divider, Icon, Link, Select, Text, View } from 'reshaped/bundle'
 
 const COPIED_FOR_MS = 1500
 
@@ -83,20 +83,61 @@ function WorkItemRow({ item }: { item: WorkItem }): React.JSX.Element {
   )
 }
 
+const ALL_PROJECTS = ''
+
+interface Props {
+  items: WorkItem[]
+  /** The project the list is narrowed to, or null for all of them. */
+  project: string | null
+  onProjectChange: (project: string | null) => void
+}
+
 /** Work items assigned to the user, each with a link, its description and a branch to copy. */
-export default function WorkItemsList({ items }: { items: WorkItem[] }): React.JSX.Element {
-  if (items.length === 0) {
-    return (
-      <View padding={6} align="center">
-        <Text variant="body-2" color="neutral-faded">
-          Nothing open is assigned to you.
-        </Text>
-      </View>
-    )
-  }
+export default function WorkItemsList({
+  items,
+  project,
+  onProjectChange,
+}: Props): React.JSX.Element {
+  // The chosen project stays offered while nothing in it is assigned, or the
+  // picker would silently fall back to showing everything.
+  const projects = [
+    ...new Set([...items.map((item) => item.project), ...(project ? [project] : [])]),
+  ]
+    .filter((name) => name !== '')
+    .sort((a, b) => a.localeCompare(b))
+  const shown = project === null ? items : items.filter((item) => item.project === project)
+
   return (
     <View>
-      {items.map((item, index) => (
+      {projects.length > 1 || project !== null ? (
+        <View paddingInline={4} paddingTop={3} paddingBottom={1}>
+          <Select
+            name="work-item-project"
+            size="small"
+            value={project ?? ALL_PROJECTS}
+            onChange={({ value }) => onProjectChange(value === ALL_PROJECTS ? null : value)}
+          >
+            <option value={ALL_PROJECTS}>All projects</option>
+            {projects.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </Select>
+        </View>
+      ) : null}
+
+      {shown.length === 0 && (
+        <View padding={6} align="center">
+          <Text variant="body-2" color="neutral-faded">
+            {project === null
+              ? 'Nothing open is assigned to you.'
+              : `Nothing open in ${project} is assigned to you.`}
+          </Text>
+        </View>
+      )}
+
+      {shown.map((item, index) => (
         <View key={item.id}>
           {index > 0 && <Divider color="neutral" />}
           <WorkItemRow item={item} />

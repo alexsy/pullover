@@ -8,6 +8,7 @@ const ITEMS: WorkItem[] = [
     title: 'Upgrade services to .NET 10',
     type: 'User Story',
     state: 'Active',
+    project: 'Utvikling',
     url: 'https://dev.azure.com/acme/_workitems/edit/151699',
     description: 'Every service moves to .NET 10.\n\n• CaseAPI\n• ContactAndConsentAPI',
   },
@@ -16,11 +17,20 @@ const ITEMS: WorkItem[] = [
     title: 'Footer overlaps the cookie banner on Min side',
     type: 'Bug',
     state: 'New',
+    project: 'Drift',
     url: 'https://dev.azure.com/acme/_workitems/edit/148640',
     description: '',
   },
 ]
 
-visualCase('list', <WorkItemsList items={ITEMS} />)
+const noop = (): void => {}
 
-visualCase('empty', <WorkItemsList items={[]} />)
+visualCase('list', <WorkItemsList items={ITEMS} project={null} onProjectChange={noop} />)
+
+// Narrowed to one project, from the picker at the top.
+visualCase(
+  'one-project',
+  <WorkItemsList items={ITEMS} project="Utvikling" onProjectChange={noop} />,
+)
+
+visualCase('empty', <WorkItemsList items={[]} project={null} onProjectChange={noop} />)

@@ -122,6 +122,8 @@ export interface WorkItem {
   /** As the process names it: Bug, User Story, Product Backlog Item, Task… */
   type: string
   state: string
+  /** The Azure DevOps project it belongs to. */
+  project: string
   url: string
   /** Plain text, converted from the HTML Azure DevOps stores. */
   description: string
@@ -244,6 +246,8 @@ export interface Settings {
   sortOrder: SortOrder
   /** `status` sections the inbox as mine, new, waiting on the author and approved. */
   groupBy: Grouping
+  /** The project the Work items tab is narrowed to, or null for every project. */
+  workItemProject: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -257,4 +261,5 @@ export const DEFAULT_SETTINGS: Settings = {
   teams: [],
   sortOrder: 'waiting',
   groupBy: 'status',
+  workItemProject: null,
 }

@@ -2,13 +2,23 @@ import { ACTIVITY_VERBS, type ActivityKind, lastActivity } from '@core/activity'
 import { formatAge, formatChangedAt } from '@core/format'
 import type { CiStatus, PullRequest, SortOrder } from '@shared/types'
 import {
+  AtSign,
+  BellOff,
   Check,
+  CircleDashed,
+  CircleX,
   Clock,
   Eye,
   GitCommitHorizontal,
+  GitMerge,
   GitPullRequest,
+  Hourglass,
   Link2,
   MessageSquare,
+  MessagesSquare,
+  RotateCcw,
+  TriangleAlert,
+  Users,
   X,
 } from 'lucide-react'
 import { Actionable, Icon, Text, View } from 'reshaped/bundle'
@@ -21,7 +31,7 @@ import { accentTint, CI_BADGES, statusAccent } from './pr-colors'
  * or a size that is meant to read as the same thing.
  */
 
-const CI_ICONS = { success: Check, failure: X, pending: Clock } as const
+const CI_ICONS = { success: Check, failure: X, pending: CircleDashed } as const
 
 /** Every badge on a meta line stands this tall, so a row's badges line up. */
 export const BADGE_HEIGHT_PX = 16
@@ -54,7 +64,9 @@ export function avatarHueClass(login: string): string {
  * `*-faded` fill cannot hold an edge by itself.
  */
 export function CiChip({ status }: { status: CiStatus }): React.JSX.Element | null {
-  if (status === 'none') return null
+  // A passing build is the normal state, and its check read as an approval
+  // beside the reason; only a build worth looking at gets a chip.
+  if (status === 'none' || status === 'success') return null
   const ci = CI_BADGES[status]
 
   return (
@@ -82,13 +94,41 @@ export function CiChip({ status }: { status: CiStatus }): React.JSX.Element | nu
  * reque…") says less than the title it was protecting, and every reason
  * `classify` produces is short — the longest is "Waiting on reviewers".
  */
+const REASON_ICONS: Record<string, typeof Check> = {
+  'Review requested': Eye,
+  'Re-review requested': RotateCcw,
+  'New commits': GitCommitHorizontal,
+  'Waiting on reviewers': Clock,
+  'Waiting on author': Hourglass,
+  'You approved': Check,
+  'Ready to merge': GitMerge,
+  'Changes requested': CircleX,
+  'CI is red': CircleX,
+  'Merge conflicts': TriangleAlert,
+  Mentioned: AtSign,
+  Snoozed: BellOff,
+}
+
+/** The counted reasons, "3 new replies" and "2 open threads", have no fixed text to key on. */
+function reasonIcon(reason: string): typeof Check {
+  if (/ new repl(y|ies)$/.test(reason)) return MessageSquare
+  if (/ open threads?$/.test(reason)) return MessagesSquare
+  // Anything else is a watched team's name, which is how a team's pull
+  // request that nobody is waiting on explains itself.
+  return REASON_ICONS[reason] ?? Users
+}
+
 export function StatusText({ reason }: { reason: string }): React.JSX.Element | null {
   if (reason === '') return null
+  const color = statusAccent(reason)
 
   return (
-    <Text as="span" variant="caption-1" weight="semibold" color={statusAccent(reason)}>
-      {reason}
-    </Text>
+    <View as="span" direction="row" align="center" gap={1} wrap={false}>
+      <Icon svg={reasonIcon(reason)} size="12px" color={color} />
+      <Text as="span" variant="caption-1" weight="semibold" color={color}>
+        {reason}
+      </Text>
+    </View>
   )
 }
 
@@ -132,35 +172,41 @@ export function LastActivity({
 }
 
 /**
- * The linked work items and who approved, under the title. Each work item
- * opens itself; the click stops there rather than also opening the card.
+ * The linked work items and who approved, under the title, a line each. Each
+ * line truncates inside its own box: text spilling past a link's box would
+ * take clicks meant for the link to the card, and push the list sideways.
  */
 export function PrLinks({ pr }: { pr: PullRequest }): React.JSX.Element | null {
   if (pr.workItems.length === 0 && pr.approvedBy.length === 0) return null
   return (
-    <View direction="row" align="center" gap={2} wrap={false} minWidth={0}>
+    <View gap={0.5} minWidth={0}>
       {pr.workItems.map((workItem) => (
         <Actionable
           key={workItem.id}
+          fullWidth
           stopPropagation
           onClick={() => void window.api.openPr(workItem.url)}
           attributes={{ title: workItem.title ?? `Work item ${workItem.id}` }}
         >
           <View direction="row" align="center" gap={1} wrap={false} minWidth={0}>
             <Icon svg={Link2} size="11px" color="primary" />
-            <Text as="span" variant="caption-1" color="primary" maxLines={1}>
-              #{workItem.id}
-              {workItem.title !== null && workItem.title !== '' ? ` ${workItem.title}` : ''}
-            </Text>
+            <View minWidth={0} grow>
+              <Text variant="caption-1" color="primary" maxLines={1}>
+                #{workItem.id}
+                {workItem.title !== null && workItem.title !== '' ? ` ${workItem.title}` : ''}
+              </Text>
+            </View>
           </View>
         </Actionable>
       ))}
       {pr.approvedBy.length > 0 && (
         <View direction="row" align="center" gap={1} wrap={false} minWidth={0}>
           <Icon svg={Check} size="11px" color="positive" />
-          <Text as="span" variant="caption-1" color="neutral-faded" maxLines={1}>
-            {pr.approvedBy.join(', ')}
-          </Text>
+          <View minWidth={0} grow>
+            <Text variant="caption-1" color="neutral-faded" maxLines={1}>
+              Approved by {pr.approvedBy.join(', ')}
+            </Text>
+          </View>
         </View>
       )}
     </View>

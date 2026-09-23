@@ -228,7 +228,15 @@ export default function App(): React.JSX.Element {
               value={tab}
               options={[
                 { value: 'pull-requests', label: 'Pull requests' },
-                { value: 'work-items', label: `Work items ${snapshot.workItems.length}` },
+                {
+                  value: 'work-items',
+                  label: `Work items ${
+                    settings.workItemProject === null
+                      ? snapshot.workItems.length
+                      : snapshot.workItems.filter((w) => w.project === settings.workItemProject)
+                          .length
+                  }`,
+                },
               ]}
               onChange={(value) => setTab(value as typeof tab)}
             />
@@ -242,7 +250,15 @@ export default function App(): React.JSX.Element {
           className="pv-scroll"
           scrollableClassName="pv-scroll-content"
         >
-          {onWorkItems && <WorkItemsList items={snapshot.workItems ?? []} />}
+          {onWorkItems && (
+            <WorkItemsList
+              items={snapshot.workItems ?? []}
+              project={settings.workItemProject}
+              onProjectChange={(project) =>
+                void window.api.setSettings({ workItemProject: project })
+              }
+            />
+          )}
 
           {!onWorkItems && showEmptyState && <EmptyState isError={snapshot.status === 'error'} />}
 
