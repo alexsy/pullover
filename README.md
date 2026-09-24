@@ -6,7 +6,7 @@
 
 <p align="center"><b>Your code-review inbox, in the macOS menu bar.</b><br />Only the pull requests that need <i>you</i> — everything you're waiting on stays hidden.</p>
 
-<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> by <a href="https://yemtsov.pro">Oleksandr Yemtsov</a> that adds Azure DevOps: pull requests, teams, work items and builds.</sub></p>
+<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> by <a href="https://github.com/alexsy/pullover">alexsy/pullover</a> that adds Azure DevOps: pull requests, teams, work items and builds.</sub></p>
 
 <p align="center">
   <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
