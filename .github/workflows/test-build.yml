@@ -24,6 +24,10 @@ jobs:
           -c.mac.identity=- -c.mac.notarize=false -c.mac.hardenedRuntime=false
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # electron-builder skips signing on pull requests unless told
+          # otherwise, which would test a different app from the one released.
+          # The identity is ad-hoc, so no secret is involved.
+          CSC_FOR_PULL_REQUEST: 'true'
       # An ad-hoc signed app under the hardened runtime is killed by dyld
       # before it draws anything: library validation rejects its own
       # Electron Framework. Launching it here catches that before anyone
