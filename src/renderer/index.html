@@ -2,6 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      The window loads nothing remote but GitHub avatars; everything else is
+      bundled. Inline styles are allowed because React and Reshaped set them
+      as attributes. The WebSocket is the dev server's hot reload, which no
+      packaged build opens.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' ws://localhost:*; base-uri 'none'; form-action 'none'; object-src 'none'"
+    />
     <title>Pullover</title>
   </head>
   <body>

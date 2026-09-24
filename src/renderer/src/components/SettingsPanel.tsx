@@ -230,7 +230,7 @@ export default function SettingsPanel({
           <Link
             variant="plain"
             color="inherit"
-            onClick={() => void window.api.openPr('https://github.com/omgovich/pullover')}
+            onClick={() => void window.api.openPr('https://github.com/alexsy/pullover')}
           >
             Source
           </Link>

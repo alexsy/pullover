@@ -4,7 +4,7 @@ import { Badge, Icon, Link, Switch, Text, View } from 'reshaped/bundle'
 import SettingRow from './SettingRow'
 
 /** What the Setup instructions link opens: the setup guide in the repository. */
-const SETUP_DOC = 'https://github.com/omgovich/pullover/blob/main/MCP.md'
+const SETUP_DOC = 'https://github.com/alexsy/pullover/blob/main/MCP.md'
 
 interface Props {
   enabled: boolean
