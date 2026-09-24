@@ -116,4 +116,10 @@ describe('formatUpdateItem', () => {
   it('stays silent if a ready state somehow carries no version', () => {
     expect(formatUpdateItem({ status: 'ready', version: null })).toBeNull()
   })
+
+  it('offers the download where the build cannot install it', () => {
+    expect(formatUpdateItem({ status: 'available', version: '0.16.0' })).toEqual({
+      label: 'Download version 0.16.0',
+    })
+  })
 })

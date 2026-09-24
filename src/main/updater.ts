@@ -1,5 +1,5 @@
 import type { UpdateState } from '@shared/types'
-import { app } from 'electron'
+import { app, shell } from 'electron'
 // electron-updater is CommonJS while this process is ESM, so the named
 // export cannot be bound: `import { autoUpdater }` type-checks and builds,
 // then throws "Named export 'autoUpdater' not found" the moment the app
@@ -14,6 +14,16 @@ const { autoUpdater } = electronUpdater
  * catches the rare relaunch.
  */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+const RELEASES_URL = 'https://github.com/alexsy/pullover/releases/latest'
+
+/**
+ * macOS applies an update only when it carries the same Developer ID
+ * signature as the running app, which an unsigned build has none of. The
+ * release workflow sets this for signed builds; the rest can only point the
+ * user at the download.
+ */
+const CAN_INSTALL = import.meta.env.MAIN_VITE_UPDATE_MODE === 'install'
 
 /** A moment after launch, so the first check never competes with the first inbox fetch. */
 const FIRST_CHECK_DELAY_MS = 30 * 1000
@@ -50,8 +60,14 @@ export class Updater {
 
     // The download is meant to go unnoticed; installing is not, so it waits
     // for `install()` or for the user to quit on their own.
-    autoUpdater.autoDownload = true
-    autoUpdater.autoInstallOnAppQuit = true
+    autoUpdater.autoDownload = CAN_INSTALL
+    autoUpdater.autoInstallOnAppQuit = CAN_INSTALL
+
+    if (!CAN_INSTALL) {
+      autoUpdater.on('update-available', (info) => {
+        this.setState({ status: 'available', version: info.version })
+      })
+    }
 
     autoUpdater.on('download-progress', () => {
       this.setState({ status: 'downloading', version: null })
@@ -77,13 +93,13 @@ export class Updater {
 
   /** Quits and relaunches into the downloaded version. */
   install(): void {
-    if (this.state.status !== 'ready') return
-    autoUpdater.quitAndInstall()
+    if (this.state.status === 'available') void shell.openExternal(RELEASES_URL)
+    if (this.state.status === 'ready') autoUpdater.quitAndInstall()
   }
 
   private check(): void {
     // Nothing to look for once a version is sitting there waiting.
-    if (this.state.status === 'ready') return
+    if (this.state.status === 'ready' || this.state.status === 'available') return
     void autoUpdater.checkForUpdates().catch((error: Error) => {
       console.warn('[updater] check failed:', error.message)
     })

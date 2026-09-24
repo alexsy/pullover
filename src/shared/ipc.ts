@@ -68,6 +68,7 @@ export const IPC = {
   startAuth: 'auth:start',
   deviceCode: 'auth:device-code',
   signInAzureDevOps: 'auth:sign-in-azure-devops',
+  canSignInWithGitHub: 'auth:can-sign-in-with-github',
   signOut: 'auth:sign-out',
   hidePopup: 'window:hide-popup',
   getUpdate: 'update:get',
@@ -95,6 +96,8 @@ export interface RendererApi {
   addRepository: (fullName: string) => Promise<void>
   removeRepository: (fullName: string) => Promise<void>
   startAuth: () => Promise<void>
+  /** False in a build made without a GitHub OAuth client ID, which can only use Azure DevOps. */
+  canSignInWithGitHub: () => Promise<boolean>
   /** Signs in to an Azure DevOps organization with a personal access token. */
   signInAzureDevOps: (organization: string, token: string) => Promise<void>
   signOut: () => Promise<void>

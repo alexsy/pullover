@@ -69,3 +69,6 @@ visualCase(
 )
 
 visualCase('update-ready', header(snapshot(), { status: 'ready', version: '0.9.0' }))
+
+// An unsigned build, which offers the new version as a download instead.
+visualCase('update-available', header(snapshot(), { status: 'available', version: '0.9.0' }))

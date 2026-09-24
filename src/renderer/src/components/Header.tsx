@@ -48,8 +48,12 @@ export default function Header({
   onOpenSettings,
   onInstallUpdate,
 }: Props): React.JSX.Element {
-  const updateReady = update.status === 'ready' && update.version !== null
-  const updateLabel = `Restart to update to ${update.version}`
+  const updateReady =
+    (update.status === 'ready' || update.status === 'available') && update.version !== null
+  const updateLabel =
+    update.status === 'available'
+      ? `Download version ${update.version}`
+      : `Restart to update to ${update.version}`
   return (
     <View
       direction="row"
