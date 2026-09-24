@@ -2,7 +2,7 @@
   <img src="build/icon.png" width="140" alt="Pullover icon" />
 </p>
 
-<h1 align="center">Pullover</h1>
+<h1 align="center">Pullover(with Azure DevOps integration)</h1>
 
 <p align="center"><b>Your code-review inbox, in the macOS menu bar.</b><br />Only the pull requests that need <i>you</i> — everything you're waiting on stays hidden.</p>
 
