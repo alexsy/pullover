@@ -43,9 +43,20 @@ export async function fetchAzureIdentity(client: AzureDevOpsClient): Promise<Azu
   }
 }
 
+const PROJECT_PAGE_SIZE = 500
+const MAX_PROJECTS = 5000
+
 async function listProjectIds(client: AzureDevOpsClient): Promise<string[]> {
-  const data = (await client('_apis/projects', { $top: '500' })) as ListResponse<{ id: string }>
-  return data.value.map((project) => project.id)
+  const ids: string[] = []
+  for (let skip = 0; skip < MAX_PROJECTS; skip += PROJECT_PAGE_SIZE) {
+    const page = (await client('_apis/projects', {
+      $top: String(PROJECT_PAGE_SIZE),
+      $skip: String(skip),
+    })) as ListResponse<{ id: string }>
+    ids.push(...page.value.map((project) => project.id))
+    if (page.value.length < PROJECT_PAGE_SIZE) break
+  }
+  return ids
 }
 
 /**
@@ -299,15 +310,25 @@ export async function fetchRecentBuilds(
     ).then(
       (data) => data.value,
       (error: unknown) => {
-        // A project with pipelines turned off answers 404; that is no reason
-        // to lose the others.
-        if (error instanceof AzureDevOpsError && error.status === 404) return []
+        // Pipelines turned off answer 404, and build permissions are set per
+        // project; neither is a reason to lose the projects that answered.
+        if (error instanceof AzureDevOpsError && [401, 403, 404].includes(error.status)) {
+          return error
+        }
         throw error
       },
     ),
   )
+  const refused = perProject.find(
+    (result): result is AzureDevOpsError =>
+      result instanceof AzureDevOpsError && result.status !== 404,
+  )
+  // Refused everywhere is the token lacking the scope, which is worth saying.
+  if (refused !== undefined && perProject.every((result) => result instanceof AzureDevOpsError)) {
+    throw refused
+  }
   return perProject
-    .flat()
+    .flatMap((result) => (result instanceof AzureDevOpsError ? [] : result))
     .map((build) => mapAzureBuild(organization, build))
     .sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt))
     .slice(0, MAX_BUILDS)

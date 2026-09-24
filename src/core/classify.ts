@@ -5,6 +5,7 @@ import {
   hasParticipated,
   myLastActivityAt,
   myLatestReview,
+  myLatestVote,
   myThreads,
   oldestBlockingChangeRequestAt,
   oldestPendingReplyAt,
@@ -116,7 +117,7 @@ function classifyReviewPr(pr: PullRequest, myLogin: string): Verdict {
   // Every thread I opened or joined has been resolved or answered, so there is
   // nothing left the author owes me. An answered one was caught above.
   if (
-    myReview?.state !== 'APPROVED' &&
+    myLatestVote(pr, myLogin)?.state !== 'APPROVED' &&
     myThreads(pr, myLogin).length > 0 &&
     threadsAwaitingAuthor(pr, myLogin).length === 0
   ) {
@@ -143,7 +144,8 @@ function classifyReviewPr(pr: PullRequest, myLogin: string): Verdict {
   }
 
   if (participated) {
-    const reason = myReview?.state === 'APPROVED' ? 'You approved' : 'Waiting on author'
+    const reason =
+      myLatestVote(pr, myLogin)?.state === 'APPROVED' ? 'You approved' : 'Waiting on author'
     return { category: 'waiting', reason, waitingSince: null }
   }
 

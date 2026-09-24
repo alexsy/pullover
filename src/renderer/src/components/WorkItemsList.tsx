@@ -110,6 +110,7 @@ export default function WorkItemsList({ items, filter, onFilterChange }: Props):
           <View.Item grow>
             <FilterPicker
               name="work-item-project"
+              label="Project"
               allLabel="All projects"
               options={projects}
               value={filter.workItemProject}
@@ -119,6 +120,7 @@ export default function WorkItemsList({ items, filter, onFilterChange }: Props):
           <View.Item grow>
             <FilterPicker
               name="work-item-type"
+              label="Work item type"
               allLabel="All types"
               options={types}
               value={filter.workItemType}

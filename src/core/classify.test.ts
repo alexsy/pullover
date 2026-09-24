@@ -267,6 +267,22 @@ describe('classify — reviewer branch', () => {
     expect(classify(pr, ctx()).reason).toBe('You approved')
   })
 
+  it('keeps an approval when a later comment-only review follows it', () => {
+    const pr = makePullRequest({
+      buckets: ['involves'],
+      reviews: [
+        makeReview(ME, '2026-08-05T10:00:00Z', { state: 'APPROVED' }),
+        makeReview(ME, '2026-08-06T10:00:00Z', { state: 'COMMENTED' }),
+      ],
+      reviewThreads: [
+        makeThread({ isResolved: true, comments: [makeComment(ME, '2026-08-06T10:00:00Z')] }),
+      ],
+    })
+    const result = classify(pr, ctx())
+    expect(result.category).toBe('waiting')
+    expect(result.reason).toBe('You approved')
+  })
+
   it('counts a push after my comments when I was asked to review and never voted', () => {
     const pr = makePullRequest({
       buckets: ['review-requested'],

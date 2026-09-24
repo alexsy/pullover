@@ -1,5 +1,5 @@
 import { orderSection } from '@core/stack'
-import { compareIso, myLatestReview } from '@core/threads'
+import { compareIso, myLatestVote } from '@core/threads'
 import {
   CATEGORY_TITLES,
   type ClassifiedPullRequest,
@@ -33,7 +33,7 @@ export function statusGroup(item: ClassifiedPullRequest, myLogin: string): Statu
   const { pr } = item
   if (pr.authorLogin === myLogin) return 'mine'
   if (!item.isSnoozed && item.category !== 'waiting') return 'new'
-  if (myLatestReview(pr, myLogin)?.state === 'APPROVED' || pr.reviewDecision === 'APPROVED') {
+  if (myLatestVote(pr, myLogin)?.state === 'APPROVED' || pr.reviewDecision === 'APPROVED') {
     return 'approved'
   }
   return 'waiting-on-author'

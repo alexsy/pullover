@@ -377,4 +377,54 @@ describe('Azure DevOps builds', () => {
     const request = seen.find((s) => s.url.pathname.endsWith('/p1/_apis/build/builds'))
     expect(request?.url.searchParams.get('queryOrder')).toBe('queueTimeDescending')
   })
+
+  function builds(project: string, id: number) {
+    return (url: URL) =>
+      url.pathname === `/contoso/${project}/_apis/build/builds`
+        ? json({ value: [run(id, project, '2026-09-24T08:00:00Z')] })
+        : undefined
+  }
+
+  it('keeps the projects that answered when another refuses', async () => {
+    const { impl } = fakeFetch([
+      (url) =>
+        url.pathname === '/contoso/_apis/projects'
+          ? json({ value: [{ id: 'p1' }, { id: 'p2' }] })
+          : undefined,
+      builds('p1', 1),
+      (url) =>
+        url.pathname === '/contoso/p2/_apis/build/builds'
+          ? json({ message: 'no' }, 403)
+          : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+    expect((await source.fetchBuilds?.())?.map((b) => b.id)).toEqual([1])
+  })
+
+  it('fails when every project refuses, as a token without the scope does', async () => {
+    const { impl } = fakeFetch([
+      (url) =>
+        url.pathname === '/contoso/_apis/projects' ? json({ value: [{ id: 'p1' }] }) : undefined,
+      (url) =>
+        url.pathname.endsWith('/_apis/build/builds') ? json({ message: 'no' }, 401) : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+    await expect(source.fetchBuilds?.()).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('reads every page of projects', async () => {
+    const { impl, seen } = fakeFetch([
+      (url) => {
+        if (url.pathname !== '/contoso/_apis/projects') return undefined
+        const skip = Number(url.searchParams.get('$skip'))
+        const ids = skip === 0 ? Array.from({ length: 500 }, (_, i) => `a${i}`) : ['last']
+        return json({ value: ids.map((id) => ({ id })) })
+      },
+      builds('last', 9),
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+    expect((await source.fetchBuilds?.())?.map((b) => b.id)).toEqual([9])
+    const pages = seen.filter((s) => s.url.pathname === '/contoso/_apis/projects')
+    expect(pages.map((s) => s.url.searchParams.get('$skip'))).toEqual(['0', '500'])
+  })
 })

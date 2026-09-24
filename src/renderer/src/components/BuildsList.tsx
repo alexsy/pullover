@@ -91,6 +91,7 @@ export default function BuildsList({
         <View paddingInline={4} paddingTop={3} paddingBottom={1}>
           <FilterPicker
             name="build-project"
+            label="Project"
             allLabel="All projects"
             options={projects}
             value={project}

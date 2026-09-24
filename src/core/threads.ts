@@ -61,6 +61,18 @@ export function myLatestReview(pr: PullRequest, myLogin: string): Review | null 
   return mine.at(-1) ?? null
 }
 
+/**
+ * My standing vote: the latest review that decided something. A comment-only
+ * review, such as the one a reply in a thread creates, leaves an approval in
+ * place.
+ */
+export function myLatestVote(pr: PullRequest, myLogin: string): Review | null {
+  const votes = pr.reviews
+    .filter((r) => r.authorLogin === myLogin && r.state !== 'PENDING' && r.state !== 'COMMENTED')
+    .sort((a, b) => compareIso(a.submittedAt, b.submittedAt))
+  return votes.at(-1) ?? null
+}
+
 export function hasParticipated(pr: PullRequest, myLogin: string): boolean {
   if (myLatestReview(pr, myLogin) !== null) return true
   if (pr.reviewThreads.some((thread) => thread.comments.some((c) => c.authorLogin === myLogin))) {
