@@ -18,8 +18,13 @@ export interface StackPosition {
  * cannot disagree about whether one is in flight.
  */
 export interface UpdateState {
-  status: 'idle' | 'downloading' | 'ready'
-  /** The version waiting to be installed; only set once `status` is `ready`. */
+  /**
+   * `available` is a newer release this build cannot install itself — an
+   * unsigned build, which macOS won't let update in place — so the user is
+   * sent to download it instead.
+   */
+  status: 'idle' | 'downloading' | 'ready' | 'available'
+  /** The newer version; set once `status` is `ready` or `available`. */
   version: string | null
 }
 

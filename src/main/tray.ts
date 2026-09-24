@@ -51,8 +51,10 @@ export function formatRefreshItem(status: InboxSnapshot['status']): {
  * menu entry that appears and vanishes on its own is just noise.
  */
 export function formatUpdateItem(state: UpdateState): { label: string } | null {
-  if (state.status !== 'ready' || state.version === null) return null
-  return { label: `Restart to update to ${state.version}` }
+  if (state.version === null) return null
+  if (state.status === 'ready') return { label: `Restart to update to ${state.version}` }
+  if (state.status === 'available') return { label: `Download version ${state.version}` }
+  return null
 }
 
 export interface TrayCallbacks {

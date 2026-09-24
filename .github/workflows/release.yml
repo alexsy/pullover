@@ -24,8 +24,15 @@ name: Release
 #                              Apple allows downloading it exactly once.
 #   - APPLE_API_KEY_ID       — that key's ID.
 #   - APPLE_API_ISSUER       — the issuer UUID it belongs to.
-# Only the account holder can issue the certificate, so only they can cut a
-# release; a fork's CI will fail this job's secret check, which is correct.
+# Every one of these is optional in this fork:
+#   - Without the five signing secrets the build is ad-hoc signed and not
+#     notarized. macOS asks before opening it the first time, and it cannot
+#     update itself in place, so it offers the new version as a download
+#     instead (MAIN_VITE_UPDATE_MODE, read by src/main/updater.ts).
+#   - Without PULLOVER_GITHUB_CLIENT_ID, GitHub sign-in is left out of the
+#     build; Azure DevOps sign-in needs no client ID.
+#   - Without ANTHROPIC_API_KEY the release is published with the commit
+#     subjects as its notes.
 
 on:
   push:
@@ -68,20 +75,14 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-      - name: Ensure the OAuth client ID is configured
+      - name: Note a missing OAuth client ID
         if: ${{ vars.PULLOVER_GITHUB_CLIENT_ID == '' }}
-        run: |
-          echo "::error::Set the PULLOVER_GITHUB_CLIENT_ID repository variable (Settings → Secrets and variables → Actions → Variables) to the client ID of the official Pullover OAuth App."
-          exit 1
+        run: echo "::warning::PULLOVER_GITHUB_CLIENT_ID is not set, so this build cannot sign in with GitHub. Azure DevOps sign-in is unaffected."
 
-      - run: npm run build
-        env:
-          MAIN_VITE_GITHUB_CLIENT_ID: ${{ vars.PULLOVER_GITHUB_CLIENT_ID }}
-
-      # electron-builder skips notarization with only a warning when the
-      # credentials are absent, so a missing secret would quietly ship an
-      # un-notarized build. Fail loudly here instead.
-      - name: Ensure the signing and notarization secrets are configured
+      # All five or none: a partial set is a mistake worth stopping for,
+      # where none at all is the deliberate unsigned release.
+      - name: Decide whether to sign
+        id: signing
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
@@ -93,14 +94,23 @@ jobs:
           for name in CSC_LINK CSC_KEY_PASSWORD APPLE_API_KEY_CONTENT APPLE_API_KEY_ID APPLE_API_ISSUER; do
             [ -n "${!name}" ] || missing="$missing $name"
           done
-          if [ -n "$missing" ]; then
-            echo "::error::Missing repository secrets:$missing — signing needs CSC_LINK (Developer ID .p12 as base64), CSC_KEY_PASSWORD, and an App Store Connect key as APPLE_API_KEY_CONTENT + APPLE_API_KEY_ID + APPLE_API_ISSUER. See the header of this file."
+          if [ "$missing" = " CSC_LINK CSC_KEY_PASSWORD APPLE_API_KEY_CONTENT APPLE_API_KEY_ID APPLE_API_ISSUER" ]; then
+            echo "::warning::No signing secrets: releasing an unsigned build that offers updates as downloads."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing — signing needs all five. See the header of this file."
             exit 1
+          else
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # @electron/notarize takes APPLE_API_KEY as a path to the .p8, not its
-      # contents, so the secret is written to a file the runner discards.
+      - run: npm run build
+        env:
+          MAIN_VITE_GITHUB_CLIENT_ID: ${{ vars.PULLOVER_GITHUB_CLIENT_ID }}
+          MAIN_VITE_UPDATE_MODE: ${{ steps.signing.outputs.signed == 'true' && 'install' || 'notify' }}
+
       - name: Stage the App Store Connect API key
+        if: steps.signing.outputs.signed == 'true'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
         run: |
@@ -108,6 +118,7 @@ jobs:
           printf '%s' "$APPLE_API_KEY_CONTENT" > "$RUNNER_TEMP/asc-api-key.p8"
 
       - name: Build the universal dmg and zip, and attach them to a draft release
+        if: steps.signing.outputs.signed == 'true'
         run: npx electron-builder --mac dmg zip --universal --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -130,7 +141,17 @@ jobs:
       # signing the image "will lead to unwanted errors in combination with
       # notarization requirements". The ticket travels with the app, so the
       # app is what Gatekeeper judges on first launch.
+      - name: Build the unsigned universal dmg and zip, and attach them to a draft release
+        if: steps.signing.outputs.signed != 'true'
+        run: >-
+          npx electron-builder --mac dmg zip --universal --publish always
+          -c.mac.identity=- -c.mac.notarize=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
       - name: Verify the app is signed, notarized and stapled
+        if: steps.signing.outputs.signed == 'true'
         run: |
           app=$(ls -d dist/mac-universal/*.app)
           echo "Checking $app"
@@ -145,22 +166,31 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Ensure ANTHROPIC_API_KEY is configured
-        env:
-          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$KEY" ]; then
-            echo "::error::Set the ANTHROPIC_API_KEY repository secret — the publish job uses Claude to write the release notes. The draft release with the dmg, the zip and latest-mac.yml is ready; you can also write notes and publish it by hand."
-            exit 1
-          fi
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full history + tags, for the changelog
 
       # Claude Code CLI directly, not anthropics/claude-code-action — the
       # action refuses tag pushes ("Unsupported event type: push").
+      - name: Check for a release-notes key
+        id: notes
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: echo "claude=$([ -n "$KEY" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the draft with the commit subjects as notes
+        if: steps.notes.outputs.claude != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 '${{ github.ref_name }}^' 2>/dev/null || true)
+          range=${previous:+$previous..}${{ github.ref_name }}
+          git log --no-merges --format='- %s' "$range" > notes.md
+          gh release edit '${{ github.ref_name }}' --repo '${{ github.repository }}' \
+            --title '${{ github.ref_name }}' --notes-file notes.md --draft=false
+
       - name: Write release notes and publish the draft
+        if: steps.notes.outputs.claude == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
