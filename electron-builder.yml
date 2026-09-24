@@ -1,5 +1,6 @@
 appId: ru.omgovich.pullover
 productName: Pullover
+copyright: Copyright © 2026 Vlad Shilov, Oleksandr Yemtsov
 directories:
   output: dist
   buildResources: build

@@ -5,6 +5,12 @@
   "description": "Menu-bar inbox for GitHub code review",
   "license": "MIT",
   "author": "Vlad Shilov",
+  "contributors": [
+    {
+      "name": "Oleksandr Yemtsov",
+      "url": "https://yemtsov.pro"
+    }
+  ],
   "repository": "github:alexsy/pullover",
   "main": "./out/main/index.js",
   "type": "module",

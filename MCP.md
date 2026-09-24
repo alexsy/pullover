@@ -110,4 +110,4 @@ What it serves is the inbox the window is built from: pull requests you are invo
 
 ## ❤️ Enjoying Pullover?
 
-You read a page about MCP servers to the end, so this was built for you. Pullover is free, with no company behind it and no backend to pay for: [a star on the repo](https://github.com/omgovich/pullover) costs nothing, and [sponsoring](https://github.com/sponsors/omgovich) buys the evenings that keep it growing.
+You read a page about MCP servers to the end, so this was built for you. Pullover is free, with no company behind it and no backend to pay for: [a star on the repo](https://github.com/alexsy/pullover) costs nothing and helps others find it.
