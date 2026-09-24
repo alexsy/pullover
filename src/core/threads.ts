@@ -22,6 +22,16 @@ export function threadsAwaitingMyReply(pr: PullRequest, myLogin: string): Review
   })
 }
 
+/** Threads I commented in, resolved or not. */
+export function myThreads(pr: PullRequest, myLogin: string): ReviewThread[] {
+  return pr.reviewThreads.filter((thread) => thread.comments.some((c) => c.authorLogin === myLogin))
+}
+
+/** Unresolved threads where I spoke last: the author still owes me an answer. */
+export function threadsAwaitingAuthor(pr: PullRequest, myLogin: string): ReviewThread[] {
+  return unresolvedThreads(pr).filter((thread) => lastComment(thread)?.authorLogin === myLogin)
+}
+
 /**
  * Unresolved threads where somebody else spoke last, whether or not I am in
  * them. Used for my own PRs, where a reviewer's brand-new thread still needs

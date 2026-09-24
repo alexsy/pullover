@@ -64,7 +64,7 @@ describe('classify — reviewer branch', () => {
     expect(classify(pr, ctx()).reason).toBe('3 new replies')
   })
 
-  it('ignores a resolved thread that somebody answered', () => {
+  it("doesn't count an answer in a resolved thread as a new reply", () => {
     const pr = makePullRequest({
       buckets: ['involves'],
       reviewThreads: [
@@ -77,7 +77,7 @@ describe('classify — reviewer branch', () => {
         }),
       ],
     })
-    expect(classify(pr, ctx()).category).toBe('waiting')
+    expect(classify(pr, ctx()).reason).toBe('Comments resolved')
   })
 
   it('re-review when a commit landed after my review', () => {
@@ -214,6 +214,69 @@ describe('classify — reviewer branch', () => {
     const result = classify(pr, ctx())
     expect(result.category).toBe('waiting')
     expect(result.reason).toBe('Waiting on author')
+  })
+
+  it('comes back to me once every thread I commented in is resolved', () => {
+    const pr = makePullRequest({
+      buckets: ['involves'],
+      reviews: [makeReview(ME, '2026-08-05T10:00:00Z', { state: 'CHANGES_REQUESTED' })],
+      reviewThreads: [
+        makeThread({
+          id: 't1',
+          isResolved: true,
+          comments: [makeComment(ME, '2026-08-05T10:00:00Z')],
+        }),
+        makeThread({
+          id: 't2',
+          isResolved: true,
+          comments: [
+            makeComment(ME, '2026-08-05T10:00:00Z'),
+            makeComment('alice', '2026-08-06T10:00:00Z'),
+          ],
+        }),
+      ],
+    })
+    const result = classify(pr, ctx())
+    expect(result.category).toBe('re-review')
+    expect(result.reason).toBe('Comments resolved')
+  })
+
+  it('keeps waiting on the author while one of my threads is still open', () => {
+    const pr = makePullRequest({
+      buckets: ['involves'],
+      reviewThreads: [
+        makeThread({
+          id: 't1',
+          isResolved: true,
+          comments: [makeComment(ME, '2026-08-05T10:00:00Z')],
+        }),
+        makeThread({ id: 't2', comments: [makeComment(ME, '2026-08-05T11:00:00Z')] }),
+      ],
+    })
+    expect(classify(pr, ctx()).reason).toBe('Waiting on author')
+  })
+
+  it('leaves an approval alone when the threads are resolved', () => {
+    const pr = makePullRequest({
+      buckets: ['involves'],
+      reviews: [makeReview(ME, '2026-08-05T10:00:00Z', { state: 'APPROVED' })],
+      reviewThreads: [
+        makeThread({ isResolved: true, comments: [makeComment(ME, '2026-08-04T10:00:00Z')] }),
+      ],
+    })
+    expect(classify(pr, ctx()).reason).toBe('You approved')
+  })
+
+  it('counts a push after my comments when I was asked to review and never voted', () => {
+    const pr = makePullRequest({
+      buckets: ['review-requested'],
+      reviewThreads: [makeThread({ comments: [makeComment(ME, '2026-08-05T10:00:00Z')] })],
+      lastCommitPushedAt: '2026-08-06T10:00:00Z',
+    })
+    const result = classify(pr, ctx())
+    expect(result.category).toBe('re-review')
+    expect(result.reason).toBe('New commits')
+    expect(result.waitingSince).toBe('2026-08-06T10:00:00Z')
   })
 
   it('says so when my review was an approval', () => {

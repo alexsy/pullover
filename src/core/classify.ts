@@ -5,8 +5,10 @@ import {
   hasParticipated,
   myLastActivityAt,
   myLatestReview,
+  myThreads,
   oldestBlockingChangeRequestAt,
   oldestPendingReplyAt,
+  threadsAwaitingAuthor,
   threadsAwaitingMyReply,
   unansweredThreads,
 } from '@core/threads'
@@ -99,8 +101,29 @@ function classifyReviewPr(pr: PullRequest, myLogin: string): Verdict {
     }
   }
 
+  // Commenting without a vote leaves no review to compare a push against,
+  // which is how Azure DevOps reviewers usually work.
+  const lastActivity = myLastActivityAt(pr, myLogin)
+  if (
+    myReview === null &&
+    requested &&
+    lastActivity !== null &&
+    pr.lastCommitPushedAt > lastActivity
+  ) {
+    return { category: 're-review', reason: 'New commits', waitingSince: pr.lastCommitPushedAt }
+  }
+
+  // Every thread I opened or joined has been resolved or answered, so there is
+  // nothing left the author owes me. An answered one was caught above.
+  if (
+    myReview?.state !== 'APPROVED' &&
+    myThreads(pr, myLogin).length > 0 &&
+    threadsAwaitingAuthor(pr, myLogin).length === 0
+  ) {
+    return { category: 're-review', reason: 'Comments resolved', waitingSince: pr.updatedAt }
+  }
+
   if (pr.buckets.includes('mentions') && !requested) {
-    const lastActivity = myLastActivityAt(pr, myLogin)
     // `mentionsAt` is empty when our own text scan couldn't find where (a
     // team mention, etc.) even though GitHub's search matched — fall back to
     // the PR's last activity rather than silently hiding a PR that needs us.
