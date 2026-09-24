@@ -311,3 +311,25 @@ describe('Azure DevOps work items', () => {
     expect(query.query).toMatch(/\[System.AssignedTo\] = @Me/)
   })
 })
+
+describe('Azure DevOps paging', () => {
+  it('keeps asking past the first page of 200', async () => {
+    const page = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) => azurePr(from + i))
+    const { impl, seen } = fakeFetch([
+      identity,
+      (url) => {
+        if (!url.pathname.endsWith('/_apis/git/pullrequests')) return undefined
+        if (url.searchParams.get('searchCriteria.creatorId') !== 'me-id') return json({ value: [] })
+        const skip = Number(url.searchParams.get('$skip'))
+        return json({ value: skip === 0 ? page(1, 200) : page(201, 3) })
+      },
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+
+    const { prs } = await source.fetchPullRequests('vlad@contoso.com')
+    expect(prs).toHaveLength(203)
+    const authored = seen.filter((s) => s.url.searchParams.get('searchCriteria.creatorId'))
+    expect(authored.map((s) => s.url.searchParams.get('$skip'))).toEqual(['0', '200'])
+  })
+})

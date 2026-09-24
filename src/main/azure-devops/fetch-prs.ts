@@ -52,24 +52,44 @@ async function listProjectIds(client: AzureDevOpsClient): Promise<string[]> {
  * organization-wide route is one request; should a server not offer it, the
  * same search runs project by project.
  */
+/** Pull requests asked for per request, and the most any one search collects. */
+const PAGE_SIZE = 200
+const MAX_PULL_REQUESTS = 1000
+
+/** Every page of one search, until a page comes back short or the cap is reached. */
+async function allPages(
+  client: AzureDevOpsClient,
+  path: string,
+  params: Record<string, string>,
+): Promise<AzurePullRequest[]> {
+  const found: AzurePullRequest[] = []
+  for (let skip = 0; skip < MAX_PULL_REQUESTS; skip += PAGE_SIZE) {
+    const page = (await client(path, {
+      ...params,
+      $top: String(PAGE_SIZE),
+      $skip: String(skip),
+    })) as ListResponse<AzurePullRequest>
+    found.push(...page.value)
+    if (page.value.length < PAGE_SIZE) break
+  }
+  return found
+}
+
 async function searchPullRequests(
   client: AzureDevOpsClient,
   criteria: Record<string, string>,
 ): Promise<AzurePullRequest[]> {
-  const params = { 'searchCriteria.status': 'active', $top: '200', ...criteria }
+  const params = { 'searchCriteria.status': 'active', ...criteria }
   try {
-    const data = (await client('_apis/git/pullrequests', params)) as ListResponse<AzurePullRequest>
-    return data.value
+    return await allPages(client, '_apis/git/pullrequests', params)
   } catch (error) {
     if (!(error instanceof AzureDevOpsError) || error.status !== 404) throw error
   }
   const projects = await listProjectIds(client)
   const perProject = await Promise.all(
-    projects.map(async (project) => {
-      const path = `${encodeURIComponent(project)}/_apis/git/pullrequests`
-      const data = (await client(path, params)) as ListResponse<AzurePullRequest>
-      return data.value
-    }),
+    projects.map((project) =>
+      allPages(client, `${encodeURIComponent(project)}/_apis/git/pullrequests`, params),
+    ),
   )
   return perProject.flat()
 }

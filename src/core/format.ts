@@ -61,10 +61,16 @@ export function formatChangedAt(iso: string, now: string, timeZone?: string): st
   const time = parts(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
   const day = (at: string): string =>
     parts(at, { year: 'numeric', month: '2-digit', day: '2-digit' })
-  const yesterday = new Date(Date.parse(now) - DAY).toISOString()
+  // The calendar day before today where the user is, not the moment 24 hours
+  // ago: on the day the clocks change those fall on different dates.
+  const [d, m, y] = day(now).split('/').map(Number) as [number, number, number]
+  const yesterday = new Date(Date.UTC(y, m - 1, d - 1))
+  const yesterdayDay = `${String(yesterday.getUTCDate()).padStart(2, '0')}/${String(
+    yesterday.getUTCMonth() + 1,
+  ).padStart(2, '0')}/${yesterday.getUTCFullYear()}`
 
   if (day(iso) === day(now)) return time
-  if (day(iso) === day(yesterday)) return `Yesterday ${time}`
+  if (day(iso) === yesterdayDay) return `Yesterday ${time}`
   const sameYear = parts(iso, { year: 'numeric' }) === parts(now, { year: 'numeric' })
   const date = parts(iso, {
     day: 'numeric',

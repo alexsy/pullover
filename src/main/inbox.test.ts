@@ -1062,3 +1062,25 @@ describe('Inbox.reclassify', () => {
     expect(fetchPrs).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('Inbox work items', () => {
+  const failing = (error: Error) =>
+    ({ siteName: 'Azure DevOps', fetchWorkItems: () => Promise.reject(error) }) as never
+
+  function withStatus(message: string, status: number): Error {
+    return Object.assign(new Error(message), { status })
+  }
+
+  it('blames the token scope when the token is refused', async () => {
+    const inbox = build([], { getClient: () => failing(withStatus('no', 401)) })
+    await inbox.refresh()
+    expect(inbox.getSnapshot().errorMessage).toMatch(/Work Items \(Read\) scope/)
+    expect(inbox.getSnapshot().status).toBe('ready')
+  })
+
+  it('says what went wrong when it is anything else', async () => {
+    const inbox = build([], { getClient: () => failing(withStatus('Service Unavailable', 503)) })
+    await inbox.refresh()
+    expect(inbox.getSnapshot().errorMessage).toBe("Couldn't read work items: Service Unavailable")
+  })
+})

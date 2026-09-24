@@ -131,6 +131,15 @@ describe('formatChangedAt', () => {
     expect(formatChangedAt('2025-12-31T10:00:00Z', now, 'UTC')).toBe('31 Dec 2025 10:00')
   })
 
+  it('says yesterday across the night the clocks go forward', () => {
+    // 00:30 in Oslo on 30 March 2026, the day after summer time began: 24
+    // hours earlier is still 29 March by the clock, but only 23 hours of it.
+    const afterSpringForward = '2026-03-29T22:30:00Z'
+    expect(formatChangedAt('2026-03-28T23:30:00Z', afterSpringForward, 'Europe/Oslo')).toBe(
+      'Yesterday 00:30',
+    )
+  })
+
   it('reads the day in the given time zone', () => {
     expect(formatChangedAt('2026-09-22T23:30:00Z', now, 'Europe/Oslo')).toBe('01:30')
   })

@@ -5,7 +5,7 @@ import { computeStackPositions } from '@core/stack'
 import type { InboxSnapshot } from '@shared/ipc'
 import type { ClassifiedPullRequest, PullRequest } from '@shared/types'
 import { isAuthError } from './github/auth-error'
-import { describeError } from './github/error-message'
+import { describeError, httpStatus } from './github/error-message'
 import type { FetchedPullRequests } from './github/fetch-prs'
 import { formatRestrictedOrgs } from './github/org-restriction'
 import { rateLimitResetAt } from './github/rate-limit'
@@ -232,9 +232,14 @@ export class Inbox {
       // without the Work Items scope still gets its inbox.
       const workItemsPass = client.fetchWorkItems?.().then(
         (items) => ({ items, warning: null }),
-        () => ({
+        (error: unknown) => ({
           items: [],
-          warning: "Couldn't read work items — the token needs the Work Items (Read) scope",
+          // A refused token is almost always one without the scope; anything
+          // else is an outage or a bad answer, and a new token won't help.
+          warning:
+            isAuthError(error) || httpStatus(error) === 403
+              ? "Couldn't read work items — the token needs the Work Items (Read) scope"
+              : `Couldn't read work items: ${describeError(error)}`,
         }),
       )
       const { prs, restrictedOrgs, warning } = await this.fetchPrs(client, myLogin)
