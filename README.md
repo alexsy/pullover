@@ -6,7 +6,7 @@
 
 <p align="center"><b>Your code-review inbox, in the macOS menu bar.</b><br />Only the pull requests that need <i>you</i> — everything you're waiting on stays hidden.</p>
 
-<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> that adds Azure DevOps: pull requests, teams and work items.</sub></p>
+<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> by <a href="https://yemtsov.pro">Oleksandr Yemtsov</a> that adds Azure DevOps: pull requests, teams, work items and builds.</sub></p>
 
 <p align="center">
   <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
@@ -142,3 +142,7 @@ Nothing an agent does through Pullover reaches GitHub: it reads, and a snooze is
 Pullover has no backend. There's no server in the middle, no account to create, no analytics, no telemetry, no crash reporting — the app talks to exactly one place, GitHub's API, straight from your Mac. The optional MCP server is off until you turn it on, and listens to this Mac alone. Your OAuth token never leaves the machine: it's encrypted via the macOS Keychain (Electron's `safeStorage`) and stored locally. And you don't have to take anyone's word for any of this — the entire app is open source, right here in this repo.
 
 Pullover only ever reads from GitHub — never a comment, a review, or any other write there. The one thing it writes is its own snooze list, in a file on this Mac. Sign-in asks for `repo` and `read:org`, the narrowest scopes GitHub offers that can still see pull requests in private repositories and review requests that arrived through a team; if your organisation restricts third-party OAuth Apps, an owner has to approve Pullover under **Settings → Third-party Actions Access** before those repos show up.
+
+## 🙌 Credits
+
+Pullover was created by [Vlad Shilov](https://omgovich.ru) — the original project lives at [omgovich/pullover](https://github.com/omgovich/pullover). Azure DevOps support (pull requests, teams, work items and builds) and the changes in this fork are by [Oleksandr Yemtsov](https://yemtsov.pro).
