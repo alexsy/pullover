@@ -40,6 +40,7 @@ export class Inbox {
     knownRepositories: [],
     siteName: null,
     workItems: null,
+    builds: null,
   }
 
   private prs: PullRequest[] = []
@@ -205,6 +206,7 @@ export class Inbox {
         knownRepositories: [],
         siteName: null,
         workItems: null,
+        builds: null,
       })
       return
     }
@@ -242,8 +244,19 @@ export class Inbox {
               : `Couldn't read work items: ${describeError(error)}`,
         }),
       )
+      const buildsPass = client.fetchBuilds?.().then(
+        (items) => ({ items, warning: null }),
+        (error: unknown) => ({
+          items: [],
+          warning:
+            isAuthError(error) || httpStatus(error) === 403
+              ? "Couldn't read builds — the token needs the Build (Read) scope"
+              : `Couldn't read builds: ${describeError(error)}`,
+        }),
+      )
       const { prs, restrictedOrgs, warning } = await this.fetchPrs(client, myLogin)
       const workItems = workItemsPass === undefined ? null : await workItemsPass
+      const builds = buildsPass === undefined ? null : await buildsPass
       this.prs = prs
 
       const settings = this.deps.store.getSettings()
@@ -269,13 +282,14 @@ export class Inbox {
         attentionCount: countAttention(items),
         lastUpdatedAt: now,
         errorMessage:
-          [warning ?? formatRestrictedOrgs(restrictedOrgs), workItems?.warning]
+          [warning ?? formatRestrictedOrgs(restrictedOrgs), workItems?.warning, builds?.warning]
             .filter((notice) => notice != null)
             .join(' · ') || null,
         myLogin: this.myLogin,
         knownRepositories: collectRepositories(this.prs),
         siteName: client.siteName,
         workItems: workItems?.items ?? null,
+        builds: builds?.items ?? null,
       })
     } catch (error) {
       const resetAt = rateLimitResetAt(error, this.now())

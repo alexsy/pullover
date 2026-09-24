@@ -333,3 +333,48 @@ describe('Azure DevOps paging', () => {
     expect(authored.map((s) => s.url.searchParams.get('$skip'))).toEqual(['0', '200'])
   })
 })
+
+describe('Azure DevOps builds', () => {
+  function run(id: number, project: string, queueTime: string) {
+    return {
+      id,
+      buildNumber: `2026.${id}`,
+      status: 'completed',
+      result: 'failed',
+      queueTime,
+      sourceBranch: 'refs/heads/main',
+      definition: { name: 'CI' },
+      project: { name: project },
+    }
+  }
+
+  it('gathers the newest runs of every project, newest first', async () => {
+    const { impl, seen } = fakeFetch([
+      (url) =>
+        url.pathname === '/contoso/_apis/projects'
+          ? json({ value: [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }] })
+          : undefined,
+      (url) =>
+        url.pathname === '/contoso/p1/_apis/build/builds'
+          ? json({ value: [run(1, 'Utvikling', '2026-09-24T08:00:00Z')] })
+          : undefined,
+      (url) =>
+        url.pathname === '/contoso/p2/_apis/build/builds'
+          ? json({ value: [run(2, 'Drift', '2026-09-24T09:00:00Z')] })
+          : undefined,
+      (url) =>
+        url.pathname === '/contoso/p3/_apis/build/builds'
+          ? json({ message: 'Pipelines are turned off' }, 404)
+          : undefined,
+    ])
+    const source = createAzureDevOpsSource('contoso', 'x', impl)
+
+    const builds = await source.fetchBuilds?.()
+    expect(builds?.map((b) => [b.id, b.project, b.state])).toEqual([
+      [2, 'Drift', 'failed'],
+      [1, 'Utvikling', 'failed'],
+    ])
+    const request = seen.find((s) => s.url.pathname.endsWith('/p1/_apis/build/builds'))
+    expect(request?.url.searchParams.get('queryOrder')).toBe('queueTimeDescending')
+  })
+})

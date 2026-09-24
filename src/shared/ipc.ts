@@ -1,4 +1,11 @@
-import type { ClassifiedPullRequest, Settings, SnoozeType, UpdateState, WorkItem } from './types'
+import type {
+  Build,
+  ClassifiedPullRequest,
+  Settings,
+  SnoozeType,
+  UpdateState,
+  WorkItem,
+} from './types'
 
 export interface InboxSnapshot {
   status: 'signed-out' | 'loading' | 'ready' | 'error'
@@ -13,6 +20,8 @@ export interface InboxSnapshot {
   siteName: string | null
   /** Work items assigned to the user, or null where the site has none. */
   workItems: WorkItem[] | null
+  /** Recent pipeline runs, or null where the site has none. */
+  builds: Build[] | null
 }
 
 /**

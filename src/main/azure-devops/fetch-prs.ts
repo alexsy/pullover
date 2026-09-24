@@ -1,3 +1,4 @@
+import { type AzureBuild, mapAzureBuild } from '@core/builds'
 import {
   type AzureIteration,
   type AzureMe,
@@ -9,7 +10,7 @@ import {
   mapAzurePullRequest,
 } from '@core/map-azure-pr'
 import { htmlToText } from '@core/work-items'
-import type { PullRequest, SearchBucket, WorkItem, WorkItemRef } from '@shared/types'
+import type { Build, PullRequest, SearchBucket, WorkItem, WorkItemRef } from '@shared/types'
 import { isAuthError } from '../github/auth-error'
 import type { FetchedPullRequests } from '../github/fetch-prs'
 import { type AzureDevOpsClient, AzureDevOpsError } from './client'
@@ -274,6 +275,42 @@ export async function fetchAssignedWorkItems(
       },
     ]
   })
+}
+
+/** Runs asked for per project, and the most the tab keeps across them all. */
+const BUILDS_PER_PROJECT = 20
+const MAX_BUILDS = 100
+
+/**
+ * The latest pipeline runs across every project, newest first. There is no
+ * organization-wide route for builds, so it is one request a project.
+ */
+export async function fetchRecentBuilds(
+  client: AzureDevOpsClient,
+  organization: string,
+): Promise<Build[]> {
+  const projects = await listProjectIds(client)
+  const perProject = await mapLimited(projects, DETAIL_CONCURRENCY, (project) =>
+    (
+      client(`${encodeURIComponent(project)}/_apis/build/builds`, {
+        $top: String(BUILDS_PER_PROJECT),
+        queryOrder: 'queueTimeDescending',
+      }) as Promise<ListResponse<AzureBuild>>
+    ).then(
+      (data) => data.value,
+      (error: unknown) => {
+        // A project with pipelines turned off answers 404; that is no reason
+        // to lose the others.
+        if (error instanceof AzureDevOpsError && error.status === 404) return []
+        throw error
+      },
+    ),
+  )
+  return perProject
+    .flat()
+    .map((build) => mapAzureBuild(organization, build))
+    .sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt))
+    .slice(0, MAX_BUILDS)
 }
 
 export async function fetchAzurePullRequests(

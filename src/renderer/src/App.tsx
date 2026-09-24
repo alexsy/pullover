@@ -1,8 +1,10 @@
+import { filterBuilds } from '@core/builds'
 import { buildSections } from '@core/sections'
 import { filterWorkItems } from '@core/work-items'
 import type { ClassifiedPullRequest } from '@shared/types'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Divider, Loader, ScrollArea, Text, useHotkeys, View } from 'reshaped/bundle'
+import BuildsList from './components/BuildsList'
 import EmptyState from './components/EmptyState'
 import Header from './components/Header'
 import InboxSection from './components/InboxSection'
@@ -50,10 +52,12 @@ export default function App(): React.JSX.Element {
   const update = useUpdate()
   const scroll = useScrollMemory()
   const [showSettings, setShowSettings] = useState(false)
-  const [tab, setTab] = useState<'pull-requests' | 'work-items'>('pull-requests')
-  // The tab only exists where the site has work items; signing out of one
-  // that did must not strand the window on it.
+  const [tab, setTab] = useState<'pull-requests' | 'work-items' | 'builds'>('pull-requests')
+  // These tabs only exist where the site has them; signing out of one that
+  // did must not strand the window on them.
   const onWorkItems = tab === 'work-items' && snapshot.workItems !== null
+  const onBuilds = tab === 'builds' && snapshot.builds !== null
+  const onOtherTab = onWorkItems || onBuilds
   const [now, setNow] = useState(() => new Date().toISOString())
   const { collapsed, toggleSection } = useSectionCollapse()
   const { toast, showToast, undoToast } = useToast()
@@ -110,7 +114,7 @@ export default function App(): React.JSX.Element {
       },
     },
     [moveSelection],
-    { disabled: showSettings || onWorkItems, preventDefault: true },
+    { disabled: showSettings || onOtherTab, preventDefault: true },
   )
 
   // Its own call, deliberately without `{ disabled: showSettings }`: the
@@ -166,7 +170,7 @@ export default function App(): React.JSX.Element {
       },
     },
     [selectedId, snapshot.items, refresh, showToast, selectedElement],
-    { disabled: showSettings || onWorkItems },
+    { disabled: showSettings || onOtherTab },
   )
 
   const showEmptyState = snapshot.attentionCount === 0
@@ -223,16 +227,28 @@ export default function App(): React.JSX.Element {
           onInstallUpdate={() => void window.api.installUpdate()}
         />
 
-        {snapshot.workItems !== null && (
+        {(snapshot.workItems !== null || snapshot.builds !== null) && (
           <View paddingInline={3} paddingBlock={2} borderColor="neutral" borderBottom>
             <SegmentedPicker
               value={tab}
               options={[
                 { value: 'pull-requests', label: 'Pull requests' },
-                {
-                  value: 'work-items',
-                  label: `Work items ${filterWorkItems(snapshot.workItems, settings).length}`,
-                },
+                ...(snapshot.workItems === null
+                  ? []
+                  : [
+                      {
+                        value: 'work-items',
+                        label: `Work items ${filterWorkItems(snapshot.workItems, settings).length}`,
+                      },
+                    ]),
+                ...(snapshot.builds === null
+                  ? []
+                  : [
+                      {
+                        value: 'builds',
+                        label: `Builds ${filterBuilds(snapshot.builds, settings.buildProject).length}`,
+                      },
+                    ]),
               ]}
               onChange={(value) => setTab(value as typeof tab)}
             />
@@ -254,14 +270,23 @@ export default function App(): React.JSX.Element {
             />
           )}
 
-          {!onWorkItems && showEmptyState && <EmptyState isError={snapshot.status === 'error'} />}
+          {onBuilds && (
+            <BuildsList
+              builds={snapshot.builds ?? []}
+              project={settings.buildProject}
+              now={now}
+              onProjectChange={(buildProject) => void window.api.setSettings({ buildProject })}
+            />
+          )}
+
+          {!onOtherTab && showEmptyState && <EmptyState isError={snapshot.status === 'error'} />}
 
           {/* The rules live between the blocks rather than on them: a seam
               belongs to neither side, and only out here is it known what a
               section follows. `neutral` is the shell's own border colour, so
               every line in the window reads as the same one. Nothing opens
               the list with a rule — the header's border is already there. */}
-          {!onWorkItems &&
+          {!onOtherTab &&
             drawnSections.map((section, index) => (
               <Fragment key={section.key}>
                 {(showEmptyState || index > 0) && <Divider color="neutral" />}

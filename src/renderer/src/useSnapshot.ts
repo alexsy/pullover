@@ -11,6 +11,7 @@ const EMPTY: InboxSnapshot = {
   knownRepositories: [],
   siteName: null,
   workItems: null,
+  builds: null,
 }
 
 export function useSnapshot(): InboxSnapshot {
