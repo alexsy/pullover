@@ -177,7 +177,6 @@ const shortcut = new Shortcut(() => {
 app.dock?.hide()
 
 void app.whenReady().then(() => {
-  loadClientFromDisk()
   window = createPopupWindow()
 
   tray = createTray({
@@ -210,6 +209,9 @@ void app.whenReady().then(() => {
     applyMcpSetting,
   })
 
+  // After the icon is up: reading the token can stop on a Keychain prompt,
+  // which every differently signed build brings up again.
+  loadClientFromDisk()
   if (client !== null) inbox.start()
   updater.start()
   shortcut.apply(store.getSettings().globalShortcut)
