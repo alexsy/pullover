@@ -145,7 +145,7 @@ jobs:
         if: steps.signing.outputs.signed != 'true'
         run: >-
           npx electron-builder --mac dmg zip --universal --publish always
-          -c.mac.identity=- -c.mac.notarize=false
+          -c.mac.identity=- -c.mac.notarize=false -c.mac.hardenedRuntime=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

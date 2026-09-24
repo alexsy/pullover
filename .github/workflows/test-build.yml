@@ -21,9 +21,26 @@ jobs:
           MAIN_VITE_GITHUB_CLIENT_ID: ${{ vars.PULLOVER_GITHUB_CLIENT_ID }}
       - run: >-
           npx electron-builder --mac dmg --universal --publish never
-          -c.mac.identity=- -c.mac.notarize=false
+          -c.mac.identity=- -c.mac.notarize=false -c.mac.hardenedRuntime=false
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # An ad-hoc signed app under the hardened runtime is killed by dyld
+      # before it draws anything: library validation rejects its own
+      # Electron Framework. Launching it here catches that before anyone
+      # installs it.
+      - name: Check the app starts
+        run: |
+          app=dist/mac-universal/Pullover.app
+          codesign --verify --deep --strict "$app"
+          "$app/Contents/MacOS/Pullover" > launch.log 2>&1 &
+          pid=$!
+          sleep 10
+          if ! kill -0 "$pid" 2>/dev/null; then
+            cat launch.log
+            echo "::error::Pullover exited on launch"
+            exit 1
+          fi
+          kill "$pid"
       - uses: actions/upload-artifact@v4
         with:
           name: Pullover-dmg
