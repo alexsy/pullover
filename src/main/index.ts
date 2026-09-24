@@ -195,6 +195,7 @@ void app.whenReady().then(() => {
     getWindow: () => window,
     signIn,
     signInAzureDevOps,
+    canSignInWithGitHub: () => Boolean(CLIENT_ID),
     signOut,
     getSiteName: () => client?.siteName ?? 'GitHub',
     restartPolling,

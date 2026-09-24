@@ -26,6 +26,8 @@ export interface IpcDeps {
   getWindow: () => BrowserWindow | null
   signIn: (onDeviceCode: (payload: DeviceCodePayload) => void) => Promise<void>
   signInAzureDevOps?: (organization: string, token: string) => Promise<void>
+  /** Whether this build has a GitHub OAuth client ID; true when absent from the deps. */
+  canSignInWithGitHub?: () => boolean
   /** Names the site in the pull-request menu; GitHub when absent. */
   getSiteName?: () => string
   signOut: () => void
@@ -160,6 +162,8 @@ export function registerIpc(deps: IpcDeps): void {
       deps.getWindow()?.webContents.send(IPC.deviceCode, payload)
     }),
   )
+
+  ipcMain.handle(IPC.canSignInWithGitHub, () => deps.canSignInWithGitHub?.() ?? true)
 
   ipcMain.handle(IPC.signInAzureDevOps, (_event, organization: string, token: string) =>
     deps.signInAzureDevOps?.(organization, token),

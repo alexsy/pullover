@@ -185,7 +185,20 @@ jobs:
         run: |
           previous=$(git describe --tags --abbrev=0 '${{ github.ref_name }}^' 2>/dev/null || true)
           range=${previous:+$previous..}${{ github.ref_name }}
-          git log --no-merges --format='- %s' "$range" > notes.md
+          # The same check the Claude path makes before publishing: without the
+          # zip and latest-mac.yml, installed copies never see this release.
+          version='${{ github.ref_name }}'; version=${version#v}
+          assets=$(gh api 'repos/${{ github.repository }}/releases' --jq '.[] | select(.tag_name == "${{ github.ref_name }}") | .assets[].name')
+          for name in "Pullover-$version.dmg" "Pullover-$version.zip" latest-mac.yml; do
+            grep -qx "$name" <<<"$assets" || { echo "::error::The draft is missing $name — not publishing it."; exit 1; }
+          done
+          if [ -n "$previous" ]; then
+            git log --no-merges --format='- %s' "$range" > notes.md
+          else
+            # The first release of this fork has no tag to count from, and the
+            # whole upstream history is not what changed.
+            printf '%s\n' '- 🧩 **Azure DevOps** — sign in with a personal access token to see your pull requests, your teams'"'"' reviews and the work items assigned to you, alongside everything Pullover already did for GitHub.' > notes.md
+          fi
           gh release edit '${{ github.ref_name }}' --repo '${{ github.repository }}' \
             --title '${{ github.ref_name }}' --notes-file notes.md --draft=false
 

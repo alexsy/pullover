@@ -10,6 +10,7 @@ const PAT_HELP_URL =
 
 export default function SignIn({ initialSite = 'github' }: { initialSite?: Site }) {
   const [site, setSite] = useState<Site>(initialSite)
+  const [gitHubAvailable, setGitHubAvailable] = useState(true)
   const [code, setCode] = useState<DeviceCodePayload | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -17,6 +18,16 @@ export default function SignIn({ initialSite = 'github' }: { initialSite?: Site 
   const [token, setToken] = useState('')
 
   useEffect(() => window.api.onDeviceCode(setCode), [])
+
+  // A build without a GitHub client ID can only sign in to Azure DevOps, so
+  // it opens there and never offers the way back.
+  useEffect(() => {
+    void window.api.canSignInWithGitHub?.().then((available) => {
+      if (available) return
+      setGitHubAvailable(false)
+      setSite('azure-devops')
+    })
+  }, [])
 
   const run = async (attempt: () => Promise<void>): Promise<void> => {
     setBusy(true)
@@ -104,11 +115,13 @@ export default function SignIn({ initialSite = 'github' }: { initialSite?: Site 
               Sign in to Azure DevOps
             </Button>
             <View direction="row" justify="space-between">
-              <Text variant="caption-1" color="neutral-faded">
-                <Link variant="plain" color="inherit" onClick={() => switchTo('github')}>
-                  Use GitHub instead
-                </Link>
-              </Text>
+              {gitHubAvailable && (
+                <Text variant="caption-1" color="neutral-faded">
+                  <Link variant="plain" color="inherit" onClick={() => switchTo('github')}>
+                    Use GitHub instead
+                  </Link>
+                </Text>
+              )}
               <Text variant="caption-1" color="neutral-faded">
                 <Link
                   variant="plain"
