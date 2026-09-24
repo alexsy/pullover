@@ -51,6 +51,8 @@ describe('formatStatusLine', () => {
     errorMessage: null,
     myLogin: 'vlad',
     knownRepositories: [],
+    siteName: 'GitHub',
+    workItems: null,
   }
 
   it('says a refresh is running, matching the spinner in the window', () => {

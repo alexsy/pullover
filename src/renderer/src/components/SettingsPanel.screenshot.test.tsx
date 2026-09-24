@@ -37,7 +37,12 @@ function panel(
 
   return (
     <div style={{ height: WINDOW_HEIGHT_PX }}>
-      <SettingsPanel knownRepositories={KNOWN} myLogin={myLogin} onClose={() => {}} />
+      <SettingsPanel
+        knownRepositories={KNOWN}
+        myLogin={myLogin}
+        siteName="GitHub"
+        onClose={() => {}}
+      />
     </div>
   )
 }

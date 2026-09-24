@@ -25,6 +25,9 @@ export interface IpcDeps {
   store: AppStore
   getWindow: () => BrowserWindow | null
   signIn: (onDeviceCode: (payload: DeviceCodePayload) => void) => Promise<void>
+  signInAzureDevOps?: (organization: string, token: string) => Promise<void>
+  /** Names the site in the pull-request menu; GitHub when absent. */
+  getSiteName?: () => string
   signOut: () => void
   restartPolling: () => void
   getUpdate: () => UpdateState
@@ -79,16 +82,18 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.showPrMenu, (_event, request: PrMenuRequest) => {
     return new Promise<PrMenuAction | null>((resolve) => {
       let chosen: PrMenuAction | null = null
-      const template: MenuItemConstructorOptions[] = prMenuEntries(request.isSnoozed).map(
-        (entry) =>
-          entry.type === 'separator'
-            ? { type: 'separator' }
-            : {
-                label: entry.label,
-                click: () => {
-                  chosen = entry.action
-                },
+      const template: MenuItemConstructorOptions[] = prMenuEntries(
+        request.isSnoozed,
+        deps.getSiteName?.(),
+      ).map((entry) =>
+        entry.type === 'separator'
+          ? { type: 'separator' }
+          : {
+              label: entry.label,
+              click: () => {
+                chosen = entry.action
               },
+            },
       )
 
       Menu.buildFromTemplate(template).popup({
@@ -122,7 +127,11 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle(IPC.setSettings, async (_event, patch: Partial<Settings>) => {
     deps.store.updateSettings(patch)
     if (patch.pollIntervalMinutes !== undefined) deps.restartPolling()
-    if (patch.watchAllRepositories !== undefined) deps.inbox.reclassify()
+    if (patch.watchAllRepositories !== undefined || patch.sortOrder !== undefined) {
+      deps.inbox.reclassify()
+    }
+    // A team changes what is searched for, not just what is shown.
+    if (patch.teams !== undefined) void deps.inbox.refresh()
     // From the store, not the patch: it may correct an accelerator this build
     // no longer offers, and the OS must hold whatever the picker shows.
     if (patch.globalShortcut !== undefined) {
@@ -150,6 +159,10 @@ export function registerIpc(deps: IpcDeps): void {
     deps.signIn((payload) => {
       deps.getWindow()?.webContents.send(IPC.deviceCode, payload)
     }),
+  )
+
+  ipcMain.handle(IPC.signInAzureDevOps, (_event, organization: string, token: string) =>
+    deps.signInAzureDevOps?.(organization, token),
   )
 
   ipcMain.handle(IPC.signOut, () => deps.signOut())

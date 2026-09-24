@@ -35,6 +35,8 @@ const api: RendererApi = {
   addRepository: (fullName: string) => ipcRenderer.invoke(IPC.addRepository, fullName),
   removeRepository: (fullName: string) => ipcRenderer.invoke(IPC.removeRepository, fullName),
   startAuth: () => ipcRenderer.invoke(IPC.startAuth),
+  signInAzureDevOps: (organization: string, token: string) =>
+    ipcRenderer.invoke(IPC.signInAzureDevOps, organization, token),
   signOut: () => ipcRenderer.invoke(IPC.signOut),
   hidePopup: () => ipcRenderer.invoke(IPC.hidePopup),
   getUpdate: () => ipcRenderer.invoke(IPC.getUpdate),

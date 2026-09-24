@@ -23,7 +23,7 @@ class MemoryStore implements KeyValueStore {
 const NOW = '2026-08-10T12:00:00Z'
 /** One minute and a second later: past `STALE_AFTER_MS` in src/core/staleness.ts. */
 const LATER = '2026-08-10T12:01:01Z'
-const CLIENT = (async () => ({})) as never
+const CLIENT = { siteName: 'GitHub' } as never
 
 const openThread = makeThread({
   id: 'T_1',

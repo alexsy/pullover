@@ -75,8 +75,9 @@ export interface PullRequest {
   createdAt: string
   updatedAt: string
   isDraft: boolean
-  additions: number
-  deletions: number
+  /** Null where the site doesn't report line counts, as Azure DevOps doesn't. */
+  additions: number | null
+  deletions: number | null
   headRefName: string
   baseRefName: string
   ciStatus: CiStatus
@@ -99,6 +100,33 @@ export interface PullRequest {
   /** Every @-mention of the user on this PR, oldest first. */
   mentionsAt: string[]
   buckets: SearchBucket[]
+  /** Watched teams on the reviewer list; Azure DevOps only. */
+  teams: string[]
+  /** Display names of the reviewers whose current vote is an approval. */
+  approvedBy: string[]
+  /** Work items linked to the pull request; Azure DevOps only. */
+  workItems: WorkItemRef[]
+}
+
+export interface WorkItemRef {
+  id: number
+  /** Null when the token can't read work items, so only the link can be shown. */
+  title: string | null
+  url: string
+}
+
+/** A work item assigned to the user, for the Work items tab. */
+export interface WorkItem {
+  id: number
+  title: string
+  /** As the process names it: Bug, User Story, Product Backlog Item, Task… */
+  type: string
+  state: string
+  /** The Azure DevOps project it belongs to. */
+  project: string
+  url: string
+  /** Plain text, converted from the HTML Azure DevOps stores. */
+  description: string
 }
 
 export type Category =
@@ -183,6 +211,20 @@ export const LAYOUT_OPTIONS: { value: Layout; label: string }[] = [
   { value: 'compact', label: 'Compact' },
 ]
 
+export type SortOrder = 'waiting' | 'recent'
+
+export const SORT_ORDER_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: 'waiting', label: 'Longest waiting' },
+  { value: 'recent', label: 'Latest change' },
+]
+
+export type Grouping = 'reason' | 'status'
+
+export const GROUPING_OPTIONS: { value: Grouping; label: string }[] = [
+  { value: 'reason', label: 'Reason' },
+  { value: 'status', label: 'Status' },
+]
+
 export interface Settings {
   pollIntervalMinutes: number
   repositories: string[]
@@ -198,6 +240,16 @@ export interface Settings {
    * on and the server off.
    */
   mcpServerEnabled: boolean
+  /** Azure DevOps teams whose review requests count as the user's. */
+  teams: string[]
+  /** `recent` orders each section by latest change and shows when it happened. */
+  sortOrder: SortOrder
+  /** `status` sections the inbox as mine, new, waiting on the author and approved. */
+  groupBy: Grouping
+  /** The project the Work items tab is narrowed to, or null for every project. */
+  workItemProject: string | null
+  /** The work item type the tab is narrowed to, such as User Story, or null for every type. */
+  workItemType: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -208,4 +260,9 @@ export const DEFAULT_SETTINGS: Settings = {
   globalShortcut: 'Control+Alt+P',
   layout: 'comfortable',
   mcpServerEnabled: false,
+  teams: [],
+  sortOrder: 'waiting',
+  groupBy: 'status',
+  workItemProject: null,
+  workItemType: null,
 }

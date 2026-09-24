@@ -1,10 +1,5 @@
 import { sectionRows } from '@core/stack'
-import {
-  CATEGORY_TITLES,
-  type Category,
-  type ClassifiedPullRequest,
-  type Layout,
-} from '@shared/types'
+import type { ClassifiedPullRequest, Layout, SortOrder } from '@shared/types'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { forwardRef, useEffect, useRef } from 'react'
 import { Actionable, Icon, Text, View } from 'reshaped/bundle'
@@ -35,12 +30,13 @@ const PADDING_INLINE = 2
 const PADDING_BLOCK_END = 2
 
 interface Props {
-  category: Category
+  title: string
   /** Already in draw order (App applies `orderSection`, so the keyboard
       cursor and the screen agree on where each card sits). */
   items: ClassifiedPullRequest[]
   now: string
   layout: Layout
+  sortOrder: SortOrder
   open: boolean
   onToggle: () => void
   activePrId: string | null
@@ -52,10 +48,11 @@ interface Props {
 
 const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
   {
-    category,
+    title,
     items,
     now,
     layout,
+    sortOrder,
     open,
     onToggle,
     activePrId,
@@ -114,7 +111,7 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
             backgroundColor="elevation-overlay"
           >
             <Text as="span" variant="caption-1" weight="semibold" color="neutral">
-              {CATEGORY_TITLES[category]}
+              {title}
             </Text>
             {/* Compact leaves the count bare; comfortable sets it in a plain
                 View rather than a `Badge`, whose only borderless variant swaps
@@ -152,6 +149,8 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
                   key={row.item.pr.id}
                   ref={getCardRefCallback(row.item.pr.id)}
                   row={row}
+                  now={now}
+                  sortOrder={sortOrder}
                   isActive={row.item.pr.id === activePrId}
                   onHover={onHoverCard}
                   onSelect={onSelectCard}
@@ -163,6 +162,7 @@ const InboxSection = forwardRef<HTMLDivElement, Props>(function InboxSection(
                   ref={getCardRefCallback(row.item.pr.id)}
                   row={row}
                   now={now}
+                  sortOrder={sortOrder}
                   isActive={row.item.pr.id === activePrId}
                   onHover={onHoverCard}
                   onSelect={onSelectCard}

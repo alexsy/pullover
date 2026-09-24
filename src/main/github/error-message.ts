@@ -1,7 +1,7 @@
 /** Longest message kept whole; past this it is cut with an ellipsis. */
 const MAX_LENGTH = 120
 
-function httpStatus(error: unknown): number | null {
+export function httpStatus(error: unknown): number | null {
   if (!(error instanceof Error) || !('status' in error)) return null
   const status = (error as { status: unknown }).status
   return typeof status === 'number' ? status : null

@@ -5,16 +5,17 @@ import { computeStackPositions } from '@core/stack'
 import type { InboxSnapshot } from '@shared/ipc'
 import type { ClassifiedPullRequest, PullRequest } from '@shared/types'
 import { isAuthError } from './github/auth-error'
-import { describeError } from './github/error-message'
-import { fetchPullRequests, fetchViewerLogin, type GraphQLClient } from './github/fetch-prs'
+import { describeError, httpStatus } from './github/error-message'
+import type { FetchedPullRequests } from './github/fetch-prs'
 import { formatRestrictedOrgs } from './github/org-restriction'
 import { rateLimitResetAt } from './github/rate-limit'
+import type { PullRequestSource } from './source'
 import type { AppStore } from './store'
 
 export interface InboxDeps {
   store: AppStore
   /** Returns null while the user is signed out. */
-  getClient: () => GraphQLClient | null
+  getClient: () => PullRequestSource | null
   onChange: (snapshot: InboxSnapshot) => void
   /**
    * Called from the refresh catch block when the failure looks like a dead
@@ -24,8 +25,8 @@ export interface InboxDeps {
    */
   onAuthError?: () => void
   now?: () => string
-  fetchPrs?: typeof fetchPullRequests
-  fetchLogin?: typeof fetchViewerLogin
+  fetchPrs?: (source: PullRequestSource, myLogin: string) => Promise<FetchedPullRequests>
+  fetchLogin?: (source: PullRequestSource) => Promise<string>
 }
 
 export class Inbox {
@@ -37,6 +38,8 @@ export class Inbox {
     errorMessage: null,
     myLogin: null,
     knownRepositories: [],
+    siteName: null,
+    workItems: null,
   }
 
   private prs: PullRequest[] = []
@@ -54,13 +57,13 @@ export class Inbox {
   /** When a hit rate limit lifts. Refreshes are skipped until then. */
   private rateLimitedUntil: string | null = null
   private readonly now: () => string
-  private readonly fetchPrs: typeof fetchPullRequests
-  private readonly fetchLogin: typeof fetchViewerLogin
+  private readonly fetchPrs: NonNullable<InboxDeps['fetchPrs']>
+  private readonly fetchLogin: NonNullable<InboxDeps['fetchLogin']>
 
   constructor(private readonly deps: InboxDeps) {
     this.now = deps.now ?? (() => new Date().toISOString())
-    this.fetchPrs = deps.fetchPrs ?? fetchPullRequests
-    this.fetchLogin = deps.fetchLogin ?? fetchViewerLogin
+    this.fetchPrs = deps.fetchPrs ?? ((source, myLogin) => source.fetchPullRequests(myLogin))
+    this.fetchLogin = deps.fetchLogin ?? ((source) => source.fetchLogin())
   }
 
   getSnapshot(): InboxSnapshot {
@@ -101,6 +104,7 @@ export class Inbox {
         myLogin: this.myLogin,
         snoozes: this.deps.store.getSnoozes(),
         now: this.now(),
+        order: settings.sortOrder,
       }),
     )
     this.emit({
@@ -199,6 +203,8 @@ export class Inbox {
         errorMessage: null,
         myLogin: null,
         knownRepositories: [],
+        siteName: null,
+        workItems: null,
       })
       return
     }
@@ -222,7 +228,22 @@ export class Inbox {
       // Always fetch unfiltered: the picker's options come from what shows
       // up in the inbox, so the search itself must never be narrowed by the
       // repository selection.
-      const { prs, restrictedOrgs } = await this.fetchPrs(client, myLogin)
+      // Alongside the pull requests, and never able to fail them: a token
+      // without the Work Items scope still gets its inbox.
+      const workItemsPass = client.fetchWorkItems?.().then(
+        (items) => ({ items, warning: null }),
+        (error: unknown) => ({
+          items: [],
+          // A refused token is almost always one without the scope; anything
+          // else is an outage or a bad answer, and a new token won't help.
+          warning:
+            isAuthError(error) || httpStatus(error) === 403
+              ? "Couldn't read work items — the token needs the Work Items (Read) scope"
+              : `Couldn't read work items: ${describeError(error)}`,
+        }),
+      )
+      const { prs, restrictedOrgs, warning } = await this.fetchPrs(client, myLogin)
+      const workItems = workItemsPass === undefined ? null : await workItemsPass
       this.prs = prs
 
       const settings = this.deps.store.getSettings()
@@ -237,6 +258,7 @@ export class Inbox {
           myLogin: this.myLogin,
           snoozes: this.deps.store.getSnoozes(),
           now,
+          order: settings.sortOrder,
         }),
       )
 
@@ -246,9 +268,14 @@ export class Inbox {
         items,
         attentionCount: countAttention(items),
         lastUpdatedAt: now,
-        errorMessage: formatRestrictedOrgs(restrictedOrgs),
+        errorMessage:
+          [warning ?? formatRestrictedOrgs(restrictedOrgs), workItems?.warning]
+            .filter((notice) => notice != null)
+            .join(' · ') || null,
         myLogin: this.myLogin,
         knownRepositories: collectRepositories(this.prs),
+        siteName: client.siteName,
+        workItems: workItems?.items ?? null,
       })
     } catch (error) {
       const resetAt = rateLimitResetAt(error, this.now())
@@ -259,7 +286,7 @@ export class Inbox {
         errorMessage:
           resetAt === null
             ? describeError(error)
-            : `GitHub's rate limit is reached — try again in ${formatWait(resetAt, this.now())}`,
+            : `${client.siteName}'s rate limit is reached — try again in ${formatWait(resetAt, this.now())}`,
       })
       // A dead token fails every refresh the same way forever, so recognise
       // it specifically and hand off to whatever "sign out" means to the

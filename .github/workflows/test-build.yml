@@ -1,0 +1,31 @@
+name: Test build
+
+# An installable dmg for trying a branch out, attached to the run as an
+# artifact. Ad-hoc signed and not notarized, so macOS asks before opening it.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dmg:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          MAIN_VITE_GITHUB_CLIENT_ID: ${{ vars.PULLOVER_GITHUB_CLIENT_ID }}
+      - run: >-
+          npx electron-builder --mac dmg --universal --publish never
+          -c.mac.identity=- -c.mac.notarize=false
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pullover-dmg
+          path: dist/*.dmg
+          if-no-files-found: error

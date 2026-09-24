@@ -16,6 +16,7 @@ import {
   type ClassifiedPullRequest,
   type PullRequest,
   type Snooze,
+  type SortOrder,
   VISIBLE_CATEGORIES,
 } from '@shared/types'
 
@@ -24,6 +25,7 @@ export interface ClassifyContext {
   snoozes: Record<string, Snooze>
   /** ISO timestamp treated as "now". Injected so the classifier stays pure. */
   now: string
+  order?: SortOrder
 }
 
 interface Verdict {
@@ -118,7 +120,14 @@ function classifyReviewPr(pr: PullRequest, myLogin: string): Verdict {
   }
 
   if (participated) {
-    return { category: 'waiting', reason: 'Waiting on author', waitingSince: null }
+    const reason = myReview?.state === 'APPROVED' ? 'You approved' : 'Waiting on author'
+    return { category: 'waiting', reason, waitingSince: null }
+  }
+
+  // Watching a team means wanting all of its pull requests in view, not only
+  // the ones still waiting on a vote.
+  if (pr.teams.length > 0) {
+    return { category: 'waiting', reason: pr.teams.join(', '), waitingSince: null }
   }
 
   return { category: 'hidden', reason: '', waitingSince: null }
@@ -234,6 +243,13 @@ export function compareInboxOrder(a: Ordered, b: Ordered): number {
   return compareIso(b.pr.updatedAt, a.pr.updatedAt)
 }
 
+/** By section, then the latest change first. */
+export function compareLatestChange(a: Ordered, b: Ordered): number {
+  const byCategory = VISIBLE_CATEGORIES.indexOf(a.category) - VISIBLE_CATEGORIES.indexOf(b.category)
+  if (byCategory !== 0) return byCategory
+  return compareIso(b.pr.updatedAt, a.pr.updatedAt)
+}
+
 export function classifyAll(
   prs: PullRequest[],
   ctx: ClassifyContext,
@@ -241,7 +257,7 @@ export function classifyAll(
   return prs
     .map((pr) => classify(pr, ctx))
     .filter((item) => item.category !== 'hidden')
-    .sort(compareInboxOrder)
+    .sort(ctx.order === 'recent' ? compareLatestChange : compareInboxOrder)
 }
 
 export function countAttention(items: Omit<ClassifiedPullRequest, 'stack'>[]): number {

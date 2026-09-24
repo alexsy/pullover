@@ -1,6 +1,7 @@
 import type { PullRequestNode } from '@core/map-pr'
-import { mapCiStatus, mapPullRequest, mentionsUser } from '@core/map-pr'
+import { approvers, mapCiStatus, mapPullRequest, mentionsUser } from '@core/map-pr'
 import { describe, expect, it } from 'vitest'
+import { makeReview } from './test-factory'
 
 function node(overrides: Partial<PullRequestNode> = {}): PullRequestNode {
   return {
@@ -651,5 +652,18 @@ describe('mentionsUser', () => {
 
   it('returns false for text without the mention', () => {
     expect(mentionsUser('nothing relevant here', 'vlad')).toBe(false)
+  })
+})
+
+describe('approvers', () => {
+  it('names whoever last approved, and drops one who approved and then asked for changes', () => {
+    expect(
+      approvers([
+        makeReview('kari', '2026-08-01T10:00:00Z', { state: 'APPROVED' }),
+        makeReview('ola', '2026-08-01T11:00:00Z', { state: 'APPROVED' }),
+        makeReview('ola', '2026-08-02T10:00:00Z', { state: 'CHANGES_REQUESTED' }),
+        makeReview('kari', '2026-08-03T10:00:00Z', { state: 'COMMENTED' }),
+      ]),
+    ).toEqual(['kari'])
   })
 })

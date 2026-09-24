@@ -1,16 +1,18 @@
 import type { StackCardRow } from '@core/stack'
-import type { ClassifiedPullRequest } from '@shared/types'
+import type { ClassifiedPullRequest, SortOrder } from '@shared/types'
 import { Layers } from 'lucide-react'
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { Avatar, Icon, Text, Tooltip, View } from 'reshaped/bundle'
 import { pointerAnchor, showPrMenu } from '../pr-menu'
 import Marquee from './Marquee'
 import type { PullRequestCardHandle } from './PullRequestCard'
-import { CiChip, initialsOf, StatusText } from './pr-row-parts'
+import { avatarHueClass, CiChip, initialsOf, LastActivity, StatusText } from './pr-row-parts'
 import StackConnector from './StackConnector'
 
 interface Props {
   row: StackCardRow
+  now: string
+  sortOrder: SortOrder
   isActive: boolean
   onHover: (prId: string) => void
   onSelect: (prId: string) => void
@@ -40,7 +42,10 @@ const AVATAR_TOP_PX = (ROW_HEIGHT_PX - AVATAR_SIZE_PX) / 2
  * those are the three that least often decide whether to open a PR.
  */
 const CompactPullRequestCard = forwardRef<PullRequestCardHandle, Props>(
-  function CompactPullRequestCard({ row, isActive, onHover, onSelect, onSnoozed }: Props, ref) {
+  function CompactPullRequestCard(
+    { row, now, sortOrder, isActive, onHover, onSelect, onSnoozed }: Props,
+    ref,
+  ) {
     const { item } = row
     const { pr } = item
     const cardRef = useRef<HTMLDivElement>(null)
@@ -95,7 +100,9 @@ const CompactPullRequestCard = forwardRef<PullRequestCardHandle, Props>(
             size={AVATAR_SIZE}
             variant="faded"
             color="primary"
-            className="pv-avatar-initials"
+            className={
+              pr.authorAvatarUrl === '' ? avatarHueClass(pr.authorLogin) : 'pv-avatar-initials'
+            }
           />
 
           {/* The repository name has no room on the row, so the number it
@@ -133,6 +140,7 @@ const CompactPullRequestCard = forwardRef<PullRequestCardHandle, Props>(
               </View>
             )}
 
+            {sortOrder === 'recent' && <LastActivity pr={pr} now={now} sortOrder={sortOrder} />}
             <CiChip status={pr.ciStatus} />
             <StatusText reason={item.reason} />
           </View>

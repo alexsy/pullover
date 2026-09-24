@@ -14,6 +14,7 @@ function card(row: ReturnType<typeof makeRow>, isActive = false): React.JSX.Elem
     <PullRequestCard
       row={row}
       now={NOW}
+      sortOrder="waiting"
       isActive={isActive}
       onHover={noop}
       onSelect={noop}
@@ -111,6 +112,7 @@ function stack(rows: ReturnType<typeof makeStackRows>): React.JSX.Element {
           key={row.item.pr.id}
           row={row}
           now={NOW}
+          sortOrder="waiting"
           isActive={false}
           onHover={noop}
           onSelect={noop}
@@ -135,3 +137,22 @@ visualCase('stack-dotted', stack(makeStackRows(4, [1, 3])))
 /** A lone middle member: the chain carries on past the list in both
     directions, with nothing for either segment to meet. */
 visualCase('stack-open', stack(makeStackRows(3, [2])))
+
+/** An Azure DevOps pull request: its linked work item and who approved, under the title. */
+visualCase(
+  'links-and-approvers',
+  card(
+    makeRow({
+      additions: null,
+      deletions: null,
+      approvedBy: ['Kari Nordmann', 'Ola Hansen'],
+      workItems: [
+        {
+          id: 151699,
+          title: 'Upgrade to .NET 10',
+          url: 'https://dev.azure.com/acme/_workitems/edit/151699',
+        },
+      ],
+    }),
+  ),
+)

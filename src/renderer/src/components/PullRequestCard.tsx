@@ -1,18 +1,27 @@
-import { formatAge, formatWaiting, repositoryName } from '@core/format'
+import { repositoryName } from '@core/format'
 import type { StackCardRow } from '@core/stack'
-import type { ClassifiedPullRequest } from '@shared/types'
+import type { ClassifiedPullRequest, SortOrder } from '@shared/types'
 import { Ellipsis, Layers } from 'lucide-react'
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { Actionable, Avatar, Icon, Text, View } from 'reshaped/bundle'
 import { pointerAnchor, showPrMenu } from '../pr-menu'
 import Marquee from './Marquee'
 import { accentTint } from './pr-colors'
-import { BADGE_HEIGHT_PX, CiChip, initialsOf, StatusText } from './pr-row-parts'
+import {
+  avatarHueClass,
+  BADGE_HEIGHT_PX,
+  CiChip,
+  initialsOf,
+  LastActivity,
+  PrLinks,
+  StatusText,
+} from './pr-row-parts'
 import StackConnector from './StackConnector'
 
 interface Props {
   row: StackCardRow
   now: string
+  sortOrder: SortOrder
   isActive: boolean
   onHover: (prId: string) => void
   onSelect: (prId: string) => void
@@ -77,7 +86,7 @@ export interface PullRequestCardHandle {
  * the dense row with the repository, the age and the diff counts put back.
  */
 const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRequestCard(
-  { row, now, isActive, onHover, onSelect, onSnoozed }: Props,
+  { row, now, sortOrder, isActive, onHover, onSelect, onSnoozed }: Props,
   ref,
 ) {
   const { item } = row
@@ -147,7 +156,9 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
           // Through `className`, not `attributes.style`: `Avatar` writes its
           // own `style` after spreading the caller's, so a style set here is
           // dropped. No Reshaped prop reaches font-size or letter-spacing.
-          className="pv-avatar-initials"
+          className={
+            pr.authorAvatarUrl === '' ? avatarHueClass(pr.authorLogin) : 'pv-avatar-initials'
+          }
         />
 
         <View.Item grow>
@@ -210,30 +221,28 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
               >
                 ·
               </Text>
-              {/* Also what the section is sorted by, so the top row says why
-                  it is the top row. The `waiting` section has no such time. */}
-              <Text as="span" variant="caption-1" color="neutral-faded" numeric>
-                {item.waitingSince !== null
-                  ? formatWaiting(item.waitingSince, now)
-                  : formatAge(pr.updatedAt, now)}
-              </Text>
-              <Text
-                as="span"
-                variant="caption-1"
-                color="neutral-faded"
-                attributes={{ style: { opacity: 0.45 } }}
-              >
-                ·
-              </Text>
-              <View as="span" direction="row" gap={1}>
-                <Text as="span" variant="caption-1" weight="semibold" numeric color="positive">
-                  +{pr.additions}
-                </Text>
-                <Text as="span" variant="caption-1" weight="semibold" numeric color="critical">
-                  {'−'}
-                  {pr.deletions}
-                </Text>
-              </View>
+              <LastActivity pr={pr} now={now} sortOrder={sortOrder} />
+              {pr.additions !== null && pr.deletions !== null && (
+                <>
+                  <Text
+                    as="span"
+                    variant="caption-1"
+                    color="neutral-faded"
+                    attributes={{ style: { opacity: 0.45 } }}
+                  >
+                    ·
+                  </Text>
+                  <View as="span" direction="row" gap={1}>
+                    <Text as="span" variant="caption-1" weight="semibold" numeric color="positive">
+                      +{pr.additions}
+                    </Text>
+                    <Text as="span" variant="caption-1" weight="semibold" numeric color="critical">
+                      {'−'}
+                      {pr.deletions}
+                    </Text>
+                  </View>
+                </>
+              )}
 
               {/* The same menu the right-click and the M key open — the
                   button is only the affordance that says it is there. Stays
@@ -291,6 +300,8 @@ const PullRequestCard = forwardRef<PullRequestCardHandle, Props>(function PullRe
                 <StatusText reason={item.reason} />
               </View>
             </View>
+
+            <PrLinks pr={pr} />
           </View>
         </View.Item>
       </View>

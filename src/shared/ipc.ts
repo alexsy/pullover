@@ -1,4 +1,4 @@
-import type { ClassifiedPullRequest, Settings, SnoozeType, UpdateState } from './types'
+import type { ClassifiedPullRequest, Settings, SnoozeType, UpdateState, WorkItem } from './types'
 
 export interface InboxSnapshot {
   status: 'signed-out' | 'loading' | 'ready' | 'error'
@@ -9,6 +9,10 @@ export interface InboxSnapshot {
   myLogin: string | null
   /** Repositories seen in the fetched pull requests, for the settings picker. */
   knownRepositories: string[]
+  /** "GitHub" or "Azure DevOps" while signed in, null while signed out. */
+  siteName: string | null
+  /** Work items assigned to the user, or null where the site has none. */
+  workItems: WorkItem[] | null
 }
 
 /**
@@ -63,6 +67,7 @@ export const IPC = {
   removeRepository: 'settings:remove-repository',
   startAuth: 'auth:start',
   deviceCode: 'auth:device-code',
+  signInAzureDevOps: 'auth:sign-in-azure-devops',
   signOut: 'auth:sign-out',
   hidePopup: 'window:hide-popup',
   getUpdate: 'update:get',
@@ -90,6 +95,8 @@ export interface RendererApi {
   addRepository: (fullName: string) => Promise<void>
   removeRepository: (fullName: string) => Promise<void>
   startAuth: () => Promise<void>
+  /** Signs in to an Azure DevOps organization with a personal access token. */
+  signInAzureDevOps: (organization: string, token: string) => Promise<void>
   signOut: () => Promise<void>
   hidePopup: () => Promise<void>
   getUpdate: () => Promise<UpdateState>

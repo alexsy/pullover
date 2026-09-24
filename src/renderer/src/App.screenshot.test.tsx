@@ -59,6 +59,8 @@ function inboxZero(now: number): InboxSnapshot {
           number: 3512 - index,
           title,
           authorAvatarUrl: AVATAR_SRC,
+          createdAt: new Date(now - 72 * HOUR_MS).toISOString(),
+          lastCommitPushedAt: new Date(now - (index + 1) * HOUR_MS).toISOString(),
           updatedAt: new Date(now - (index + 1) * HOUR_MS).toISOString(),
         }),
       }),
@@ -68,6 +70,8 @@ function inboxZero(now: number): InboxSnapshot {
     errorMessage: null,
     myLogin: 'vlad',
     knownRepositories: ['acme/web'],
+    siteName: 'GitHub',
+    workItems: null,
   }
 }
 
@@ -77,7 +81,8 @@ function shellCase(name: string, openWaiting: boolean): void {
       // Written onto `<html>` as well as passed to the provider, for the
       // reason spelled out in test/visual.tsx.
       document.documentElement.setAttribute('data-rs-color-mode', mode)
-      stubApi(inboxZero(Date.now()), 'comfortable')
+      // The reason sections, since the case is about the collapsed `waiting` one.
+      stubApi(inboxZero(Date.now()), 'comfortable', { groupBy: 'reason' })
 
       const screen = await render(
         <Reshaped theme="slate" defaultColorMode={mode}>

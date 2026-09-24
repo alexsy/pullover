@@ -28,7 +28,7 @@ function fetched(prs: PullRequest[]): FetchedPullRequests {
 }
 
 const NOW = '2026-08-10T12:00:00Z'
-const CLIENT = (async () => ({})) as never
+const CLIENT = { siteName: 'GitHub' } as never
 
 let store: AppStore
 let changes: InboxSnapshot[]
@@ -1060,5 +1060,27 @@ describe('Inbox.reclassify', () => {
     expect(byId.get('PR_1')?.stack).toEqual({ id: 'PR_1', index: 1, total: 2 })
     expect(byId.get('PR_2')?.stack).toEqual({ id: 'PR_1', index: 2, total: 2 })
     expect(fetchPrs).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Inbox work items', () => {
+  const failing = (error: Error) =>
+    ({ siteName: 'Azure DevOps', fetchWorkItems: () => Promise.reject(error) }) as never
+
+  function withStatus(message: string, status: number): Error {
+    return Object.assign(new Error(message), { status })
+  }
+
+  it('blames the token scope when the token is refused', async () => {
+    const inbox = build([], { getClient: () => failing(withStatus('no', 401)) })
+    await inbox.refresh()
+    expect(inbox.getSnapshot().errorMessage).toMatch(/Work Items \(Read\) scope/)
+    expect(inbox.getSnapshot().status).toBe('ready')
+  })
+
+  it('says what went wrong when it is anything else', async () => {
+    const inbox = build([], { getClient: () => failing(withStatus('Service Unavailable', 503)) })
+    await inbox.refresh()
+    expect(inbox.getSnapshot().errorMessage).toBe("Couldn't read work items: Service Unavailable")
   })
 })

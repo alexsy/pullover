@@ -78,6 +78,8 @@ export interface FetchedPullRequests {
   prs: PullRequest[]
   /** Orgs the OAuth app cannot see; their PRs are omitted rather than failing the fetch. */
   restrictedOrgs: string[]
+  /** Something the user should know about a fetch that otherwise succeeded. */
+  warning?: string | null
 }
 
 /**

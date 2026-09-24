@@ -1,10 +1,12 @@
 import {
   DEFAULT_SETTINGS,
+  GROUPING_OPTIONS,
   LAYOUT_OPTIONS,
   type Settings,
   SHORTCUT_OPTIONS,
   type Snooze,
   type SnoozeType,
+  SORT_ORDER_OPTIONS,
 } from '@shared/types'
 import Store from 'electron-store'
 
@@ -18,7 +20,8 @@ export interface KeyValueStore {
   set<K extends keyof PersistedState>(key: K, value: PersistedState[K]): void
 }
 
-const REPO_PATTERN = /^[\w.-]+\/[\w.-]+$/
+// Spaces are for Azure DevOps, whose project and repository names may have them.
+const REPO_PATTERN = /^[\w.-](?:[\w. -]*[\w.-])?\/[\w.-](?:[\w. -]*[\w.-])?$/
 
 export class AppStore {
   constructor(private readonly backend: KeyValueStore) {}
@@ -40,11 +43,15 @@ export class AppStore {
       SHORTCUT_OPTIONS.some((option) => option.value === settings.globalShortcut)
 
     const layoutKnown = LAYOUT_OPTIONS.some((option) => option.value === settings.layout)
+    const groupingKnown = GROUPING_OPTIONS.some((option) => option.value === settings.groupBy)
+    const orderKnown = SORT_ORDER_OPTIONS.some((option) => option.value === settings.sortOrder)
 
     return {
       ...settings,
       globalShortcut: known ? settings.globalShortcut : DEFAULT_SETTINGS.globalShortcut,
       layout: layoutKnown ? settings.layout : DEFAULT_SETTINGS.layout,
+      sortOrder: orderKnown ? settings.sortOrder : DEFAULT_SETTINGS.sortOrder,
+      groupBy: groupingKnown ? settings.groupBy : DEFAULT_SETTINGS.groupBy,
     }
   }
 

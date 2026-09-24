@@ -6,14 +6,16 @@
 
 <p align="center"><b>Your code-review inbox, in the macOS menu bar.</b><br />Only the pull requests that need <i>you</i> — everything you're waiting on stays hidden.</p>
 
+<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> that adds Azure DevOps: pull requests, teams and work items.</sub></p>
+
 <p align="center">
-  <a href="https://github.com/omgovich/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
+  <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
   <a href="https://youtu.be/AWT0obp8sFQ"><img src="https://img.shields.io/badge/Watch%20the%20demo-6e6e6e?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the Pullover demo on YouTube" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/omgovich/pullover/releases/latest"><img src="https://img.shields.io/github/v/release/omgovich/pullover" alt="latest release" /></a>
-  <a href="https://github.com/omgovich/pullover/actions/workflows/ci.yml"><img src="https://github.com/omgovich/pullover/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/github/v/release/alexsy/pullover" alt="latest release" /></a>
+  <a href="https://github.com/alexsy/pullover/actions/workflows/ci.yml"><img src="https://github.com/alexsy/pullover/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
 </p>
 
@@ -44,11 +46,25 @@ GitHub notifications bury the one thing that matters — *whose move is it?* Pul
 ## 📦 Install
 
 > [!TIP]
-> **[⬇️ Download the latest release](https://github.com/omgovich/pullover/releases/latest)** — one universal build for Apple Silicon and Intel. Signed and notarized, so it just opens.
+> **[⬇️ Download the latest release](https://github.com/alexsy/pullover/releases/latest)** — one universal build for Apple Silicon and Intel. It is not signed by Apple yet, so macOS blocks the first launch: run `xattr -cr /Applications/Pullover.app` once, or allow it under **System Settings → Privacy & Security → Open Anyway**.
 
 Drag Pullover into Applications and launch it.
 
 Sign in with GitHub and you're done — out of the box Pullover watches every repo you're involved in. If that's too much, narrow it down to specific repos in **Settings**.
+
+<details>
+<summary><b>Azure DevOps</b></summary>
+
+On the sign-in screen pick **Use Azure DevOps instead**, enter your organization (`contoso` or `https://dev.azure.com/contoso`) and a [personal access token](https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) with the **Code (Read)** scope. Add **Work Items (Read)** for the Work items tab and the titles of linked work items; without it the inbox still works and says what is missing. The token is encrypted with the macOS Keychain, the same way a GitHub token is.
+
+Pullover finds the active pull requests you're a reviewer on or wrote, across every project in the organization. A few things work differently from GitHub:
+
+- A pull request needs your review while your vote is empty, and voting takes it off your plate. Commits pushed after your vote bring it back under **Take another look** (or **New**), whether or not the branch policy reset your vote — the same as a push after a GitHub review.
+- To see the pull requests assigned to a team, add it by name under **Settings → Repositories → Teams**. Looking a team up needs the token's **Project and Team (Read)** scope as well.
+- The CI chip reflects the organization's build-validation policies.
+- There are no line counts on the cards, and avatars fall back to initials.
+
+</details>
 
 <details>
 <summary><b>🛠️ Running from source</b></summary>

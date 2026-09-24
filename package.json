@@ -5,7 +5,7 @@
   "description": "Menu-bar inbox for GitHub code review",
   "license": "MIT",
   "author": "Vlad Shilov",
-  "repository": "github:omgovich/pullover",
+  "repository": "github:alexsy/pullover",
   "main": "./out/main/index.js",
   "type": "module",
   "private": true,

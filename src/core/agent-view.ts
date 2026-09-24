@@ -26,7 +26,8 @@ export interface AgentPullRequestSummary {
   ci: CiStatus
   reviewDecision: ReviewDecision
   mergeable: MergeableState
-  size: { additions: number; deletions: number }
+  /** Null where the site doesn't report line counts. */
+  size: { additions: number; deletions: number } | null
   updatedAt: string
 }
 
@@ -64,7 +65,10 @@ export function describePullRequest(item: ClassifiedPullRequest): AgentPullReque
     ci: pr.ciStatus,
     reviewDecision: pr.reviewDecision,
     mergeable: pr.mergeable,
-    size: { additions: pr.additions, deletions: pr.deletions },
+    size:
+      pr.additions === null || pr.deletions === null
+        ? null
+        : { additions: pr.additions, deletions: pr.deletions },
     updatedAt: pr.updatedAt,
   }
 }

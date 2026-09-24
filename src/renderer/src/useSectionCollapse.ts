@@ -1,22 +1,22 @@
-import type { Category } from '@shared/types'
 import { useCallback, useState } from 'react'
 
 export interface SectionCollapse {
-  collapsed: Set<Category>
-  toggleCategory: (category: Category) => void
+  collapsed: Set<string>
+  toggleSection: (key: string) => void
 }
 
-export function useSectionCollapse(initiallyCollapsed: Category[] = ['waiting']): SectionCollapse {
-  const [collapsed, setCollapsed] = useState<Set<Category>>(() => new Set(initiallyCollapsed))
+/** Keyed by section, which is a category or a status group depending on the grouping. */
+export function useSectionCollapse(initiallyCollapsed: string[] = ['waiting']): SectionCollapse {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(initiallyCollapsed))
 
-  const toggleCategory = useCallback((category: Category): void => {
+  const toggleSection = useCallback((key: string): void => {
     setCollapsed((prev) => {
       const next = new Set(prev)
-      if (next.has(category)) next.delete(category)
-      else next.add(category)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
   }, [])
 
-  return { collapsed, toggleCategory }
+  return { collapsed, toggleSection }
 }

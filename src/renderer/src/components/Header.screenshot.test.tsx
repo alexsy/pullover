@@ -14,6 +14,8 @@ function snapshot(overrides: Partial<InboxSnapshot> = {}): InboxSnapshot {
     errorMessage: null,
     myLogin: 'alice',
     knownRepositories: [],
+    siteName: 'GitHub',
+    workItems: null,
     ...overrides,
   }
 }

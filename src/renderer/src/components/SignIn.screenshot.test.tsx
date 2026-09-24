@@ -8,7 +8,10 @@ import SignIn from './SignIn'
  * the test. `SignIn` fills its parent, which in the app is the shell's whole
  * column, so the case gives it a height to fill.
  */
-function signIn(code: DeviceCodePayload | null): React.JSX.Element {
+function signIn(
+  code: DeviceCodePayload | null,
+  site: 'github' | 'azure-devops' = 'github',
+): React.JSX.Element {
   window.api = {
     onDeviceCode: (listener: (payload: DeviceCodePayload) => void) => {
       if (code !== null) listener(code)
@@ -18,7 +21,7 @@ function signIn(code: DeviceCodePayload | null): React.JSX.Element {
 
   return (
     <div style={{ height: 320 }}>
-      <SignIn />
+      <SignIn initialSite={site} />
     </div>
   )
 }
@@ -28,3 +31,5 @@ visualCase('prompt', () => signIn(null))
 visualCase('device-code', () =>
   signIn({ userCode: 'WDJB-MJHT', verificationUri: 'github.com/login/device' }),
 )
+
+visualCase('azure-devops', () => signIn(null, 'azure-devops'))

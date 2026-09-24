@@ -49,6 +49,9 @@ export function makePullRequest(overrides: Partial<PullRequest> = {}): PullReque
     readyForReviewAt: null,
     mentionsAt: [],
     buckets: [],
+    teams: [],
+    approvedBy: [],
+    workItems: [],
     ...overrides,
   }
 }

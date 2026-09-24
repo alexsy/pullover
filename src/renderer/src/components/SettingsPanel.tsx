@@ -1,7 +1,16 @@
 import { repositorySummary } from '@core/repo-filter'
 import type { McpStatus } from '@shared/ipc'
-import { LAYOUT_OPTIONS, type Layout, SHORTCUT_OPTIONS, type ThemePreference } from '@shared/types'
-import { Heart, User } from 'lucide-react'
+import {
+  GROUPING_OPTIONS,
+  type Grouping,
+  LAYOUT_OPTIONS,
+  type Layout,
+  SHORTCUT_OPTIONS,
+  SORT_ORDER_OPTIONS,
+  type SortOrder,
+  type ThemePreference,
+} from '@shared/types'
+import { User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Avatar, Button, Link, ScrollArea, Switch, Text, View } from 'reshaped/bundle'
 import { useLaunchAtLogin } from '../useLaunchAtLogin'
@@ -16,6 +25,7 @@ import SettingsGroup from './SettingsGroup'
 interface Props {
   knownRepositories: string[]
   myLogin: string | null
+  siteName: string | null
   onClose: () => void
 }
 
@@ -38,6 +48,7 @@ type Pane = 'root' | 'repositories'
 export default function SettingsPanel({
   knownRepositories,
   myLogin,
+  siteName,
   onClose,
 }: Props): React.JSX.Element {
   const settings = useSettings()
@@ -78,6 +89,7 @@ export default function SettingsPanel({
         knownRepositories={knownRepositories}
         selected={settings.repositories}
         watchAll={settings.watchAllRepositories}
+        teams={siteName === 'Azure DevOps' ? settings.teams : null}
         onBack={() => setPane('root')}
       />
     )
@@ -125,6 +137,24 @@ export default function SettingsPanel({
                   value={settings.layout}
                   options={LAYOUT_OPTIONS}
                   onChange={(value) => void window.api.setSettings({ layout: value as Layout })}
+                />
+              </SettingRow>
+
+              <SettingRow label="Group by">
+                <SegmentedPicker
+                  value={settings.groupBy}
+                  options={GROUPING_OPTIONS}
+                  onChange={(value) => void window.api.setSettings({ groupBy: value as Grouping })}
+                />
+              </SettingRow>
+
+              <SettingRow label="Order">
+                <SegmentedPicker
+                  value={settings.sortOrder}
+                  options={SORT_ORDER_OPTIONS}
+                  onChange={(value) =>
+                    void window.api.setSettings({ sortOrder: value as SortOrder })
+                  }
                 />
               </SettingRow>
 
@@ -177,7 +207,7 @@ export default function SettingsPanel({
                   {myLogin ?? 'Signed in'}
                 </Text>
                 <Text variant="caption-1" color="neutral-faded">
-                  Signed in with GitHub
+                  Signed in with {siteName ?? 'GitHub'}
                 </Text>
               </View>
               <View grow />
@@ -194,50 +224,35 @@ export default function SettingsPanel({
         </ScrollArea>
       </View>
 
-      <View
-        direction="row"
-        align="center"
-        gap={3}
-        padding={3}
-        borderColor="neutral-faded"
-        borderTop
-        backgroundColor="elevation-raised"
-      >
-        <View grow minWidth={0}>
-          <Text variant="caption-1" color="neutral-faded">
-            Pullover {__APP_VERSION__} · MIT ·{' '}
-            <Link
-              variant="plain"
-              color="inherit"
-              onClick={() => void window.api.openPr('https://github.com/omgovich/pullover')}
-            >
-              Source
-            </Link>
-          </Text>
-          <Text variant="caption-1" color="neutral-faded">
-            Built by{' '}
-            <Link
-              variant="plain"
-              color="inherit"
-              onClick={() => void window.api.openPr('https://omgovich.ru/')}
-            >
-              Vlad Shilov
-            </Link>
-          </Text>
-        </View>
-        {/* Not `critical`: that is the colour of Sign out just above, and an
-            invitation should not wear the same paint as the destructive
-            action sitting a few pixels away. */}
-        <Button
-          size="small"
-          variant="outline"
-          color="positive"
-          icon={Heart}
-          onClick={() => void window.api.openPr('https://github.com/sponsors/omgovich')}
-          attributes={{ title: 'Support Pullover on GitHub Sponsors' }}
-        >
-          Sponsor
-        </Button>
+      <View padding={3} borderColor="neutral-faded" borderTop backgroundColor="elevation-raised">
+        <Text variant="caption-1" color="neutral-faded">
+          Pullover {__APP_VERSION__} · MIT ·{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://github.com/alexsy/pullover')}
+          >
+            Source
+          </Link>
+        </Text>
+        <Text variant="caption-1" color="neutral-faded">
+          Built by{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://omgovich.ru/')}
+          >
+            Vlad Shilov
+          </Link>
+          ,{' '}
+          <Link
+            variant="plain"
+            color="inherit"
+            onClick={() => void window.api.openPr('https://yemtsov.pro/')}
+          >
+            Oleksandr Yemtsov
+          </Link>
+        </Text>
       </View>
     </View>
   )

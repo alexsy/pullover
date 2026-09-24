@@ -60,3 +60,10 @@ describe('prMenuEntries', () => {
     }
   })
 })
+
+describe('prMenuEntries on another site', () => {
+  it('names the site the pull request opens on', () => {
+    const [first] = prMenuEntries(false, 'Azure DevOps')
+    expect(first).toEqual({ type: 'item', label: 'Open on Azure DevOps', action: 'open' })
+  })
+})

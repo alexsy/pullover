@@ -122,6 +122,50 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* Initials avatars, one hue per person (see `avatarHueClass`). The chained
+   classes outrank the faded background `Avatar` paints for its colour prop. */
+.pv-avatar-initials.pv-avatar-hue {
+  background-color: oklch(0.92 0.06 var(--pv-avatar-hue));
+  color: oklch(0.42 0.12 var(--pv-avatar-hue));
+}
+
+[data-rs-color-mode="dark"] .pv-avatar-initials.pv-avatar-hue {
+  background-color: oklch(0.36 0.08 var(--pv-avatar-hue));
+  color: oklch(0.88 0.08 var(--pv-avatar-hue));
+}
+
+.pv-avatar-hue-0 {
+  --pv-avatar-hue: 25;
+}
+
+.pv-avatar-hue-1 {
+  --pv-avatar-hue: 70;
+}
+
+.pv-avatar-hue-2 {
+  --pv-avatar-hue: 140;
+}
+
+.pv-avatar-hue-3 {
+  --pv-avatar-hue: 190;
+}
+
+.pv-avatar-hue-4 {
+  --pv-avatar-hue: 230;
+}
+
+.pv-avatar-hue-5 {
+  --pv-avatar-hue: 270;
+}
+
+.pv-avatar-hue-6 {
+  --pv-avatar-hue: 310;
+}
+
+.pv-avatar-hue-7 {
+  --pv-avatar-hue: 350;
+}
+
 /* Stack line: joins a pull request to its neighbours in the chain, drawn
    behind the avatar. No Reshaped prop draws a line behind a sibling, so this
    stays plain CSS; the geometry comes from the card, which derives it from

@@ -1,13 +1,16 @@
-import { orderSection } from '@core/stack'
-import { type Category, type ClassifiedPullRequest, VISIBLE_CATEGORIES } from '@shared/types'
+import { buildSections } from '@core/sections'
+import { filterWorkItems } from '@core/work-items'
+import type { ClassifiedPullRequest } from '@shared/types'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Divider, Loader, ScrollArea, Text, useHotkeys, View } from 'reshaped/bundle'
 import EmptyState from './components/EmptyState'
 import Header from './components/Header'
 import InboxSection from './components/InboxSection'
+import SegmentedPicker from './components/SegmentedPicker'
 import SettingsPanel from './components/SettingsPanel'
 import SignIn from './components/SignIn'
 import Toast from './components/Toast'
+import WorkItemsList from './components/WorkItemsList'
 import { showPrMenu } from './pr-menu'
 import { useScrollMemory } from './useScrollMemory'
 import { useSectionCollapse } from './useSectionCollapse'
@@ -47,8 +50,12 @@ export default function App(): React.JSX.Element {
   const update = useUpdate()
   const scroll = useScrollMemory()
   const [showSettings, setShowSettings] = useState(false)
+  const [tab, setTab] = useState<'pull-requests' | 'work-items'>('pull-requests')
+  // The tab only exists where the site has work items; signing out of one
+  // that did must not strand the window on it.
+  const onWorkItems = tab === 'work-items' && snapshot.workItems !== null
   const [now, setNow] = useState(() => new Date().toISOString())
-  const { collapsed, toggleCategory } = useSectionCollapse()
+  const { collapsed, toggleSection } = useSectionCollapse()
   const { toast, showToast, undoToast } = useToast()
 
   // Keeps the relative ages honest without re-fetching anything.
@@ -65,26 +72,22 @@ export default function App(): React.JSX.Element {
   // contiguous runs. Ordering happens here, once, because both the rendered
   // sections and the keyboard cursor below read from it; deriving it twice is
   // what let the cursor drift out of step with the screen.
-  const orderedByCategory = useMemo(() => {
-    const byCategory = new Map<Category, ClassifiedPullRequest[]>()
-    for (const category of VISIBLE_CATEGORIES) {
-      byCategory.set(
-        category,
-        orderSection(snapshot.items.filter((item) => item.category === category)),
-      )
-    }
-    return byCategory
-  }, [snapshot.items])
+  const groupBy = settings?.groupBy ?? 'status'
+  const sortOrder = settings?.sortOrder ?? 'waiting'
+  const sections = useMemo(
+    () => buildSections(snapshot.items, { groupBy, sortOrder, myLogin: snapshot.myLogin }),
+    [snapshot.items, groupBy, sortOrder, snapshot.myLogin],
+  )
 
   // The order the keyboard cursor travels: visual order, skipping collapsed sections.
   const visibleItems = useMemo(() => {
     const result: ClassifiedPullRequest[] = []
-    for (const category of VISIBLE_CATEGORIES) {
-      if (collapsed.has(category)) continue
-      result.push(...(orderedByCategory.get(category) ?? []))
+    for (const section of sections) {
+      if (collapsed.has(section.key)) continue
+      result.push(...section.items)
     }
     return result
-  }, [orderedByCategory, collapsed])
+  }, [sections, collapsed])
 
   const { selectedId, pointAt, selectCard, moveSelection, registerCard, selectedElement } =
     useSelection(visibleItems)
@@ -107,7 +110,7 @@ export default function App(): React.JSX.Element {
       },
     },
     [moveSelection],
-    { disabled: showSettings, preventDefault: true },
+    { disabled: showSettings || onWorkItems, preventDefault: true },
   )
 
   // Its own call, deliberately without `{ disabled: showSettings }`: the
@@ -163,18 +166,17 @@ export default function App(): React.JSX.Element {
       },
     },
     [selectedId, snapshot.items, refresh, showToast, selectedElement],
-    { disabled: showSettings },
+    { disabled: showSettings || onWorkItems },
   )
 
   const showEmptyState = snapshot.attentionCount === 0
 
   // The sections the list actually holds — `InboxSection` draws nothing for
-  // an empty category. Needed here rather than left to each section because
+  // an empty section. Needed here rather than left to each section because
   // the rules between them are drawn from out here.
-  const drawnCategories = useMemo(
-    () =>
-      VISIBLE_CATEGORIES.filter((category) => (orderedByCategory.get(category)?.length ?? 0) > 0),
-    [orderedByCategory],
+  const drawnSections = useMemo(
+    () => sections.filter((section) => section.items.length > 0),
+    [sections],
   )
 
   // `App` always renders the one card `View` at the bottom of this function;
@@ -193,6 +195,7 @@ export default function App(): React.JSX.Element {
         <SettingsPanel
           knownRepositories={snapshot.knownRepositories}
           myLogin={snapshot.myLogin}
+          siteName={snapshot.siteName}
           onClose={() => setShowSettings(false)}
         />
       </View>
@@ -220,6 +223,22 @@ export default function App(): React.JSX.Element {
           onInstallUpdate={() => void window.api.installUpdate()}
         />
 
+        {snapshot.workItems !== null && (
+          <View paddingInline={3} paddingBlock={2} borderColor="neutral" borderBottom>
+            <SegmentedPicker
+              value={tab}
+              options={[
+                { value: 'pull-requests', label: 'Pull requests' },
+                {
+                  value: 'work-items',
+                  label: `Work items ${filterWorkItems(snapshot.workItems, settings).length}`,
+                },
+              ]}
+              onChange={(value) => setTab(value as typeof tab)}
+            />
+          </View>
+        )}
+
         <ScrollArea
           ref={scroll.ref}
           onScroll={scroll.onScroll}
@@ -227,31 +246,41 @@ export default function App(): React.JSX.Element {
           className="pv-scroll"
           scrollableClassName="pv-scroll-content"
         >
-          {showEmptyState && <EmptyState isError={snapshot.status === 'error'} />}
+          {onWorkItems && (
+            <WorkItemsList
+              items={snapshot.workItems ?? []}
+              filter={settings}
+              onFilterChange={(patch) => void window.api.setSettings(patch)}
+            />
+          )}
+
+          {!onWorkItems && showEmptyState && <EmptyState isError={snapshot.status === 'error'} />}
 
           {/* The rules live between the blocks rather than on them: a seam
               belongs to neither side, and only out here is it known what a
               section follows. `neutral` is the shell's own border colour, so
               every line in the window reads as the same one. Nothing opens
               the list with a rule — the header's border is already there. */}
-          {drawnCategories.map((category, index) => (
-            <Fragment key={category}>
-              {(showEmptyState || index > 0) && <Divider color="neutral" />}
-              <InboxSection
-                category={category}
-                items={orderedByCategory.get(category) ?? []}
-                now={now}
-                layout={settings.layout}
-                open={!collapsed.has(category)}
-                onToggle={() => toggleCategory(category)}
-                activePrId={selectedId}
-                onHoverCard={pointAt}
-                onSelectCard={selectCard}
-                onSnoozed={showToast}
-                registerCard={registerCard}
-              />
-            </Fragment>
-          ))}
+          {!onWorkItems &&
+            drawnSections.map((section, index) => (
+              <Fragment key={section.key}>
+                {(showEmptyState || index > 0) && <Divider color="neutral" />}
+                <InboxSection
+                  title={section.title}
+                  items={section.items}
+                  now={now}
+                  layout={settings.layout}
+                  sortOrder={settings.sortOrder}
+                  open={!collapsed.has(section.key)}
+                  onToggle={() => toggleSection(section.key)}
+                  activePrId={selectedId}
+                  onHoverCard={pointAt}
+                  onSelectCard={selectCard}
+                  onSnoozed={showToast}
+                  registerCard={registerCard}
+                />
+              </Fragment>
+            ))}
         </ScrollArea>
 
         <View

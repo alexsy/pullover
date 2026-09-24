@@ -253,6 +253,10 @@ function classified(row: DemoRow, now: number): ClassifiedPullRequest {
       additions: row.additions,
       deletions: row.deletions,
       ciStatus: row.ci,
+      // Every date an offset from `now`, since the card names the last event
+      // and its age: a fixed date would age a day with every day the suite runs.
+      createdAt: iso(3 * 24 * 60 * MINUTE_MS),
+      lastCommitPushedAt: iso((row.updatedMinutes ?? row.waitingMinutes ?? 120) * MINUTE_MS),
       updatedAt: iso((row.updatedMinutes ?? row.waitingMinutes ?? 120) * MINUTE_MS),
     }),
     category: row.category,
@@ -289,5 +293,7 @@ export function demoSnapshot(now: number): InboxSnapshot {
     // Derived rather than listed, so the settings picker can never come to
     // offer repositories no row in the demo belongs to.
     knownRepositories: [...new Set(ROWS.map((row) => row.repository))],
+    siteName: 'GitHub',
+    workItems: null,
   }
 }

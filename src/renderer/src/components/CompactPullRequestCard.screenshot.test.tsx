@@ -1,9 +1,9 @@
-import { makeRow, makeStackRows, visualCase } from '../test/visual'
+import { makeRow, makeStackRows, NOW, visualCase } from '../test/visual'
 import CompactPullRequestCard from './CompactPullRequestCard'
 
 /**
- * The compact row drops the repository, the age and the diff counts, so it
- * takes no `now` and is a constant on its own. What is left worth holding is
+ * The compact row drops the repository, the age and the diff counts unless
+ * sorted by latest change, so in the default order it is a constant on its own. What is left worth holding is
  * the density: one 30px row, and the same right-hand group the comfortable
  * layout draws, which is the thing the two are meant not to drift apart on.
  */
@@ -14,6 +14,8 @@ function card(row: ReturnType<typeof makeRow>, isActive = false): React.JSX.Elem
   return (
     <CompactPullRequestCard
       row={row}
+      now={NOW}
+      sortOrder="waiting"
       isActive={isActive}
       onHover={noop}
       onSelect={noop}
@@ -47,6 +49,8 @@ function stack(rows: ReturnType<typeof makeStackRows>): React.JSX.Element {
         <CompactPullRequestCard
           key={row.item.pr.id}
           row={row}
+          now={NOW}
+          sortOrder="waiting"
           isActive={false}
           onHover={noop}
           onSelect={noop}

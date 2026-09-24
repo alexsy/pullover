@@ -3,12 +3,15 @@ import PaneHeader from './PaneHeader'
 import RepositoryPicker from './RepositoryPicker'
 import SettingRow from './SettingRow'
 import SettingsGroup from './SettingsGroup'
+import TeamsEditor from './TeamsEditor'
 
 interface Props {
   knownRepositories: string[]
   /** Selected repository names as stored: lowercased. */
   selected: string[]
   watchAll: boolean
+  /** Watched teams, or null where the site has none to watch. */
+  teams: string[] | null
   onBack: () => void
 }
 
@@ -20,6 +23,7 @@ export default function RepositoriesPane({
   knownRepositories,
   selected,
   watchAll,
+  teams,
   onBack,
 }: Props): React.JSX.Element {
   return (
@@ -46,6 +50,8 @@ export default function RepositoriesPane({
               }
             />
           </SettingsGroup>
+
+          {teams !== null && <TeamsEditor teams={teams} />}
 
           {/* Nothing to narrow while every repository is watched, and the
                 row above already says as much. */}
