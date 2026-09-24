@@ -6,14 +6,16 @@
 
 <p align="center"><b>Your code-review inbox, in the macOS menu bar.</b><br />Only the pull requests that need <i>you</i> — everything you're waiting on stays hidden.</p>
 
+<p align="center"><sub>A fork of <a href="https://github.com/omgovich/pullover">omgovich/pullover</a> that adds Azure DevOps: pull requests, teams and work items.</sub></p>
+
 <p align="center">
-  <a href="https://github.com/omgovich/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
+  <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-1a1a1a?style=for-the-badge&logo=apple&logoColor=white" alt="Download Pullover for macOS" /></a>
   <a href="https://youtu.be/AWT0obp8sFQ"><img src="https://img.shields.io/badge/Watch%20the%20demo-6e6e6e?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the Pullover demo on YouTube" /></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/omgovich/pullover/releases/latest"><img src="https://img.shields.io/github/v/release/omgovich/pullover" alt="latest release" /></a>
-  <a href="https://github.com/omgovich/pullover/actions/workflows/ci.yml"><img src="https://github.com/omgovich/pullover/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/alexsy/pullover/releases/latest"><img src="https://img.shields.io/github/v/release/alexsy/pullover" alt="latest release" /></a>
+  <a href="https://github.com/alexsy/pullover/actions/workflows/ci.yml"><img src="https://github.com/alexsy/pullover/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
 </p>
 
@@ -44,7 +46,7 @@ GitHub notifications bury the one thing that matters — *whose move is it?* Pul
 ## 📦 Install
 
 > [!TIP]
-> **[⬇️ Download the latest release](https://github.com/omgovich/pullover/releases/latest)** — one universal build for Apple Silicon and Intel. Signed and notarized, so it just opens.
+> **[⬇️ Download the latest release](https://github.com/alexsy/pullover/releases/latest)** — one universal build for Apple Silicon and Intel. It is not signed by Apple yet, so macOS blocks the first launch: run `xattr -cr /Applications/Pullover.app` once, or allow it under **System Settings → Privacy & Security → Open Anyway**.
 
 Drag Pullover into Applications and launch it.
 
