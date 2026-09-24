@@ -93,6 +93,7 @@ describe('settings', () => {
       groupBy: 'status',
       workItemProject: null,
       workItemType: null,
+      buildProject: null,
     })
     store = new AppStore(backend)
     expect(store.getSettings().watchAllRepositories).toBe(false)
@@ -118,6 +119,7 @@ describe('settings', () => {
       groupBy: 'status',
       workItemProject: null,
       workItemType: null,
+      buildProject: null,
     })
   })
 

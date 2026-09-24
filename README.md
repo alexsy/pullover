@@ -55,13 +55,14 @@ Sign in with GitHub and you're done — out of the box Pullover watches every re
 <details>
 <summary><b>Azure DevOps</b></summary>
 
-On the sign-in screen pick **Use Azure DevOps instead**, enter your organization (`contoso` or `https://dev.azure.com/contoso`) and a [personal access token](https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) with the **Code (Read)** scope. Add **Work Items (Read)** for the Work items tab and the titles of linked work items; without it the inbox still works and says what is missing. The token is encrypted with the macOS Keychain, the same way a GitHub token is.
+On the sign-in screen pick **Use Azure DevOps instead**, enter your organization (`contoso` or `https://dev.azure.com/contoso`) and a [personal access token](https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate) with the **Code (Read)** scope. Add **Work Items (Read)** for the Work items tab and the titles of linked work items, and **Build (Read)** for the Builds tab; without them the inbox still works and says what is missing. The token is encrypted with the macOS Keychain, the same way a GitHub token is.
 
 Pullover finds the active pull requests you're a reviewer on or wrote, across every project in the organization. A few things work differently from GitHub:
 
 - A pull request needs your review while your vote is empty, and voting takes it off your plate. Commits pushed after your vote bring it back under **Take another look** (or **New**), whether or not the branch policy reset your vote — the same as a push after a GitHub review.
 - To see the pull requests assigned to a team, add it by name under **Settings → Repositories → Teams**. Looking a team up needs the token's **Project and Team (Read)** scope as well.
 - The CI chip reflects the organization's build-validation policies.
+- The **Builds** tab lists the latest pipeline runs of every project, newest first, with whether each is queued, running, succeeded, failed or cancelled. Clicking one opens it in Azure DevOps, and the picker at the top narrows the list to one project.
 - There are no line counts on the cards, and avatars fall back to initials.
 
 </details>

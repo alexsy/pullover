@@ -72,6 +72,7 @@ function inboxZero(now: number): InboxSnapshot {
     knownRepositories: ['acme/web'],
     siteName: 'GitHub',
     workItems: null,
+    builds: null,
   }
 }
 

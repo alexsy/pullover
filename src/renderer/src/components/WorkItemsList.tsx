@@ -2,7 +2,8 @@ import { branchName, filterWorkItems, pickerOptions, type WorkItemFilter } from 
 import type { WorkItem } from '@shared/types'
 import { Check, ChevronDown, ChevronRight, GitBranch } from 'lucide-react'
 import { useState } from 'react'
-import { Actionable, Button, Divider, Icon, Link, Select, Text, View } from 'reshaped/bundle'
+import { Actionable, Button, Divider, Icon, Link, Text, View } from 'reshaped/bundle'
+import FilterPicker from './FilterPicker'
 
 const COPIED_FOR_MS = 1500
 
@@ -83,42 +84,10 @@ function WorkItemRow({ item }: { item: WorkItem }): React.JSX.Element {
   )
 }
 
-const ALL = ''
-
 interface Props {
   items: WorkItem[]
   filter: WorkItemFilter
   onFilterChange: (patch: Partial<WorkItemFilter>) => void
-}
-
-function Picker({
-  name,
-  allLabel,
-  options,
-  value,
-  onChange,
-}: {
-  name: string
-  allLabel: string
-  options: string[]
-  value: string | null
-  onChange: (value: string | null) => void
-}): React.JSX.Element {
-  return (
-    <Select
-      name={name}
-      size="small"
-      value={value ?? ALL}
-      onChange={({ value: next }) => onChange(next === ALL ? null : next)}
-    >
-      <option value={ALL}>{allLabel}</option>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </Select>
-  )
 }
 
 /** Work items assigned to the user, each with a link, its description and a branch to copy. */
@@ -139,8 +108,9 @@ export default function WorkItemsList({ items, filter, onFilterChange }: Props):
       {items.length > 0 || narrowed ? (
         <View direction="row" gap={2} paddingInline={4} paddingTop={3} paddingBottom={1}>
           <View.Item grow>
-            <Picker
+            <FilterPicker
               name="work-item-project"
+              label="Project"
               allLabel="All projects"
               options={projects}
               value={filter.workItemProject}
@@ -148,8 +118,9 @@ export default function WorkItemsList({ items, filter, onFilterChange }: Props):
             />
           </View.Item>
           <View.Item grow>
-            <Picker
+            <FilterPicker
               name="work-item-type"
+              label="Work item type"
               allLabel="All types"
               options={types}
               value={filter.workItemType}

@@ -1084,3 +1084,15 @@ describe('Inbox work items', () => {
     expect(inbox.getSnapshot().errorMessage).toBe("Couldn't read work items: Service Unavailable")
   })
 })
+
+describe('Inbox builds', () => {
+  it('keeps the inbox and names the scope when builds are refused', async () => {
+    const refused = Object.assign(new Error('no'), { status: 401 })
+    const client = { siteName: 'Azure DevOps', fetchBuilds: () => Promise.reject(refused) }
+    const inbox = build([], { getClient: () => client as never })
+    await inbox.refresh()
+    expect(inbox.getSnapshot().status).toBe('ready')
+    expect(inbox.getSnapshot().builds).toEqual([])
+    expect(inbox.getSnapshot().errorMessage).toMatch(/Build \(Read\) scope/)
+  })
+})

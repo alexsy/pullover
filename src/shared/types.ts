@@ -134,6 +134,31 @@ export interface WorkItem {
   description: string
 }
 
+export type BuildState =
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'partially-succeeded'
+  | 'failed'
+  | 'cancelling'
+  | 'cancelled'
+
+/** A pipeline run, for the Builds tab. */
+export interface Build {
+  id: number
+  /** The run's own name, such as `20260924.3`. */
+  number: string
+  pipeline: string
+  project: string
+  /** Without `refs/heads/`; a pull request's merge ref reads as `pull/42/merge`. */
+  branch: string
+  state: BuildState
+  requestedBy: string
+  queuedAt: string
+  finishedAt: string | null
+  url: string
+}
+
 export type Category =
   | 'needs-review'
   | 'new-replies'
@@ -255,6 +280,8 @@ export interface Settings {
   workItemProject: string | null
   /** The work item type the tab is narrowed to, such as User Story, or null for every type. */
   workItemType: string | null
+  /** The project the Builds tab is narrowed to, or null for every project. */
+  buildProject: string | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -270,4 +297,5 @@ export const DEFAULT_SETTINGS: Settings = {
   groupBy: 'status',
   workItemProject: null,
   workItemType: null,
+  buildProject: null,
 }

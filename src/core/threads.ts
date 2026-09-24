@@ -22,6 +22,16 @@ export function threadsAwaitingMyReply(pr: PullRequest, myLogin: string): Review
   })
 }
 
+/** Threads I commented in, resolved or not. */
+export function myThreads(pr: PullRequest, myLogin: string): ReviewThread[] {
+  return pr.reviewThreads.filter((thread) => thread.comments.some((c) => c.authorLogin === myLogin))
+}
+
+/** Unresolved threads where I spoke last: the author still owes me an answer. */
+export function threadsAwaitingAuthor(pr: PullRequest, myLogin: string): ReviewThread[] {
+  return unresolvedThreads(pr).filter((thread) => lastComment(thread)?.authorLogin === myLogin)
+}
+
 /**
  * Unresolved threads where somebody else spoke last, whether or not I am in
  * them. Used for my own PRs, where a reviewer's brand-new thread still needs
@@ -49,6 +59,18 @@ export function myLatestReview(pr: PullRequest, myLogin: string): Review | null 
     .filter((r) => r.authorLogin === myLogin && r.state !== 'PENDING')
     .sort((a, b) => compareIso(a.submittedAt, b.submittedAt))
   return mine.at(-1) ?? null
+}
+
+/**
+ * My standing vote: the latest review that decided something. A comment-only
+ * review, such as the one a reply in a thread creates, leaves an approval in
+ * place.
+ */
+export function myLatestVote(pr: PullRequest, myLogin: string): Review | null {
+  const votes = pr.reviews
+    .filter((r) => r.authorLogin === myLogin && r.state !== 'PENDING' && r.state !== 'COMMENTED')
+    .sort((a, b) => compareIso(a.submittedAt, b.submittedAt))
+  return votes.at(-1) ?? null
 }
 
 export function hasParticipated(pr: PullRequest, myLogin: string): boolean {

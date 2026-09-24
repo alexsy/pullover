@@ -34,6 +34,7 @@ function snapshot(
     knownRepositories: ['acme/web'],
     siteName: 'GitHub',
     workItems: null,
+    builds: null,
     ...rest,
   }
 }

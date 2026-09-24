@@ -1,3 +1,4 @@
+import { type AzureBuild, mapAzureBuild } from '@core/builds'
 import {
   type AzureIteration,
   type AzureMe,
@@ -9,7 +10,7 @@ import {
   mapAzurePullRequest,
 } from '@core/map-azure-pr'
 import { htmlToText } from '@core/work-items'
-import type { PullRequest, SearchBucket, WorkItem, WorkItemRef } from '@shared/types'
+import type { Build, PullRequest, SearchBucket, WorkItem, WorkItemRef } from '@shared/types'
 import { isAuthError } from '../github/auth-error'
 import type { FetchedPullRequests } from '../github/fetch-prs'
 import { type AzureDevOpsClient, AzureDevOpsError } from './client'
@@ -42,9 +43,20 @@ export async function fetchAzureIdentity(client: AzureDevOpsClient): Promise<Azu
   }
 }
 
+const PROJECT_PAGE_SIZE = 500
+const MAX_PROJECTS = 5000
+
 async function listProjectIds(client: AzureDevOpsClient): Promise<string[]> {
-  const data = (await client('_apis/projects', { $top: '500' })) as ListResponse<{ id: string }>
-  return data.value.map((project) => project.id)
+  const ids: string[] = []
+  for (let skip = 0; skip < MAX_PROJECTS; skip += PROJECT_PAGE_SIZE) {
+    const page = (await client('_apis/projects', {
+      $top: String(PROJECT_PAGE_SIZE),
+      $skip: String(skip),
+    })) as ListResponse<{ id: string }>
+    ids.push(...page.value.map((project) => project.id))
+    if (page.value.length < PROJECT_PAGE_SIZE) break
+  }
+  return ids
 }
 
 /**
@@ -274,6 +286,52 @@ export async function fetchAssignedWorkItems(
       },
     ]
   })
+}
+
+/** Runs asked for per project, and the most the tab keeps across them all. */
+const BUILDS_PER_PROJECT = 20
+const MAX_BUILDS = 100
+
+/**
+ * The latest pipeline runs across every project, newest first. There is no
+ * organization-wide route for builds, so it is one request a project.
+ */
+export async function fetchRecentBuilds(
+  client: AzureDevOpsClient,
+  organization: string,
+): Promise<Build[]> {
+  const projects = await listProjectIds(client)
+  const perProject = await mapLimited(projects, DETAIL_CONCURRENCY, (project) =>
+    (
+      client(`${encodeURIComponent(project)}/_apis/build/builds`, {
+        $top: String(BUILDS_PER_PROJECT),
+        queryOrder: 'queueTimeDescending',
+      }) as Promise<ListResponse<AzureBuild>>
+    ).then(
+      (data) => data.value,
+      (error: unknown) => {
+        // Pipelines turned off answer 404, and build permissions are set per
+        // project; neither is a reason to lose the projects that answered.
+        if (error instanceof AzureDevOpsError && [401, 403, 404].includes(error.status)) {
+          return error
+        }
+        throw error
+      },
+    ),
+  )
+  const refused = perProject.find(
+    (result): result is AzureDevOpsError =>
+      result instanceof AzureDevOpsError && result.status !== 404,
+  )
+  // Refused everywhere is the token lacking the scope, which is worth saying.
+  if (refused !== undefined && perProject.every((result) => result instanceof AzureDevOpsError)) {
+    throw refused
+  }
+  return perProject
+    .flatMap((result) => (result instanceof AzureDevOpsError ? [] : result))
+    .map((build) => mapAzureBuild(organization, build))
+    .sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt))
+    .slice(0, MAX_BUILDS)
 }
 
 export async function fetchAzurePullRequests(

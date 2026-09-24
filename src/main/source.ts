@@ -1,10 +1,11 @@
 import type { AzureMe } from '@core/map-azure-pr'
-import type { WorkItem } from '@shared/types'
+import type { Build, WorkItem } from '@shared/types'
 import { createAzureDevOpsClient } from './azure-devops/client'
 import {
   fetchAssignedWorkItems,
   fetchAzureIdentity,
   fetchAzurePullRequests,
+  fetchRecentBuilds,
 } from './azure-devops/fetch-prs'
 import type { FetchedPullRequests } from './github/fetch-prs'
 import { createGraphQLClient, fetchPullRequests, fetchViewerLogin } from './github/fetch-prs'
@@ -17,6 +18,8 @@ export interface PullRequestSource {
   fetchPullRequests: (myLogin: string) => Promise<FetchedPullRequests>
   /** Work items assigned to the user; absent where the site has none. */
   fetchWorkItems?: () => Promise<WorkItem[]>
+  /** Recent pipeline runs; absent where the site has none. */
+  fetchBuilds?: () => Promise<Build[]>
 }
 
 export function createGitHubSource(token: string): PullRequestSource {
@@ -46,5 +49,6 @@ export function createAzureDevOpsSource(
     fetchPullRequests: async () =>
       fetchAzurePullRequests(client, organization, await identity(), getTeams()),
     fetchWorkItems: () => fetchAssignedWorkItems(client, organization),
+    fetchBuilds: () => fetchRecentBuilds(client, organization),
   }
 }
